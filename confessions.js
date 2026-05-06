@@ -16,13 +16,15 @@ function save(data) {
 }
 
 // Save a new confession and return its number
-export function saveConfession(messageId, channelId) {
+export function saveConfession(messageId, channelId, authorId, anonymous = true) {
   const data = load();
   data.count += 1;
   data.list.push({
     number:    data.count,
     messageId,
     channelId,
+    authorId,
+    anonymous,
     timestamp: Date.now(),
     votes: { yes: [], no: [] },
   });
@@ -57,6 +59,37 @@ export function getVotes(number) {
   };
 }
 
+// Get a single confession by number
+export function getConfession(number) {
+  return load().list.find(c => c.number === number) ?? null;
+}
+
+// Delete a confession and renumber subsequent ones
+// Returns { deleted, renumbered[] } or null if not found
+export function deleteConfession(number) {
+  const data = load();
+  const idx = data.list.findIndex(c => c.number === number);
+  if (idx === -1) return null;
+
+  const deleted = data.list.splice(idx, 1)[0];
+
+  // Renumber all subsequent confessions
+  const renumbered = [];
+  for (let i = idx; i < data.list.length; i++) {
+    data.list[i].number -= 1;
+    renumbered.push(data.list[i]);
+  }
+
+  data.count = data.list.length;
+  save(data);
+  return { deleted, renumbered };
+}
+
+// Reset all confessions
+export function resetConfessions() {
+  save({ count: 0, list: [] });
+}
+
 export function getCount() {
   return load().count;
 }
@@ -67,4 +100,8 @@ export function getAll() {
 
 export function getSince(timestampMs) {
   return load().list.filter(c => c.timestamp >= timestampMs);
+}
+
+export function getConfessionByMessageId(messageId) {
+  return load().list.find(c => c.messageId === messageId) ?? null;
 }

@@ -24,6 +24,12 @@ export default {
   alreadyVoted:       '❌ You have already voted on this confession.',
   confessionNotFound: '❌ Confession not found.',
 
+  // Helper context menu
+  actionLabel:       'Author action',
+  helperNotFound:    '❌ This message is not linked to a known confession.',
+  authorResult:      (n, tag, id) => `🔍 Confession **#${n}** was posted by **${tag}** (<@${id}>)`,
+  revealAdminOnly:   '❌ This action is reserved for the administrator.',
+
   // /admin
   adminDenied:  '❌ You do not have permission to use this command.',
   resetSuccess: (u) => `✅ Cooldown reset for **${u}**. They can post a confession immediately.`,

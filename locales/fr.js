@@ -24,6 +24,12 @@ export default {
   alreadyVoted:      '❌ Tu as déjà voté sur cette confession.',
   confessionNotFound:'❌ Confession introuvable.',
 
+  // Reveal (menu contextuel)
+  actionLabel:       'Voir l\'auteur',
+  helperNotFound:    '❌ Ce message n\'est pas lié à une confession connue.',
+  authorResult:      (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
+  revealAdminOnly:   '❌ Cette action est réservée à l\'administrateur.',
+
   // /admin
   adminDenied:  '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
   resetSuccess: (u) => `✅ Le cooldown de **${u}** a été réinitialisé. Il peut poster une confession immédiatement.`,

@@ -1,4 +1,4 @@
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { REST, Routes, SlashCommandBuilder, ContextMenuCommandBuilder, ApplicationCommandType } from 'discord.js';
 import 'dotenv/config';
 
 const confessionCommand = new SlashCommandBuilder()
@@ -66,6 +66,11 @@ const adminCommand = new SlashCommandBuilder()
       .setDescription('Show confession statistics')
   );
 
+const helperCommand = new ContextMenuCommandBuilder()
+  .setName(process.env.LANG === 'fr' ? 'Voir l\'auteur' : 'Author action')
+  .setType(ApplicationCommandType.Message)
+  .setDMPermission(false);
+
 const rest = new REST().setToken(process.env.BOT_TOKEN);
 
 try {
@@ -77,10 +82,10 @@ try {
     { body: [confessionCommand.toJSON()] }
   );
 
-  // /top and /admin — guild commands (instant update, server only)
+  // /top, /admin and reveal context menu — guild commands (instant update, server only)
   await rest.put(
     Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-    { body: [topCommand.toJSON(), adminCommand.toJSON()] }
+    { body: [topCommand.toJSON(), adminCommand.toJSON(), helperCommand.toJSON()] }
   );
 
   console.log('Commands deployed successfully!');

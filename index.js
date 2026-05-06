@@ -22,6 +22,7 @@ import {
   getVotes,
   getAll,
   getSince,
+  getConfessionByMessageId,
 } from './confessions.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
@@ -79,6 +80,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const { yes, no } = getVotes(number);
     await interaction.update({ components: [buildVoteRow(number, yes, no)] });
     return;
+  }
+
+  // ─── Helper context menu ────────────────────────────────────────────────────
+  if (interaction.isMessageContextMenuCommand()) {
+    if (interaction.user.id !== ADMIN_ID) {
+      return interaction.reply({ content: lang.revealAdminOnly, ephemeral: true });
+    }
+
+    const confession = getConfessionByMessageId(interaction.targetId);
+    if (!confession) {
+      return interaction.reply({ content: lang.helperNotFound, ephemeral: true });
+    }
+
+    let authorTag = confession.authorId;
+    try {
+      const user = await client.users.fetch(confession.authorId);
+      authorTag = user.tag ?? user.username;
+    } catch { /* utilisateur introuvable, on affiche juste l'ID */ }
+
+    return interaction.reply({
+      content: lang.authorResult(confession.number, authorTag, confession.authorId),
+      ephemeral: true,
+    });
   }
 
   if (!interaction.isChatInputCommand()) return;
