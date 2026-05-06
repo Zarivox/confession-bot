@@ -14,7 +14,9 @@ import {
   PermissionFlagsBits,
   Events,
 } from 'discord.js';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+// override: true → .env wins over shell-inherited env vars (e.g. LANG)
+dotenv.config({ override: true });
 import {
   getRemainingCooldown,
   setLastConfession,

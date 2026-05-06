@@ -1,5 +1,6 @@
 import { REST, Routes, SlashCommandBuilder, InteractionContextType } from 'discord.js';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 
 const confessionCommand = new SlashCommandBuilder()
   .setName('confession')
