@@ -103,13 +103,9 @@ function buildVoteRow(number, yesCount, noCount) {
   );
 }
 
-client.once(Events.ClientReady, async (c) => {
+client.once(Events.ClientReady, (c) => {
   console.log(`Connecté en tant que ${c.user.tag}`);
   console.log(`Salon des confessions : ${CONFESSION_CHANNEL_ID}`);
-  try {
-    const admin = await c.users.fetch(ADMIN_ID);
-    await admin.send(lang.botReady(c.user.tag));
-  } catch { /* DMs fermés ou admin introuvable */ }
 });
 
 client.on(Events.MessageCreate, async msg => {
