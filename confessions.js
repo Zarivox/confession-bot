@@ -28,8 +28,6 @@ export function reserveNumber() {
   return data.count;
 }
 
-const MAX_CONFESSIONS = 1000;
-
 // Save a confession using a pre-reserved number
 export function saveConfession(number, messageId, channelId, authorId, anonymous = true) {
   const data = load();
@@ -45,9 +43,10 @@ export function saveConfession(number, messageId, channelId, authorId, anonymous
 
   // Evict oldest confession from memory if limit is reached
   // (Discord message stays in the channel, only removed from JSON)
-  if (data.list.length > MAX_CONFESSIONS) {
+  const maxMemory = parseInt(process.env.MAX_CONFESSIONS_MEMORY) || 1000;
+  if (data.list.length > maxMemory) {
     const evicted = data.list.shift();
-    console.log(`[confessions] Memory limit reached — evicted #${evicted.number} from JSON`);
+    console.log(`[confessions] Memory limit (${maxMemory}) reached — evicted #${evicted.number} from JSON`);
   }
 
   save(data);
