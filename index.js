@@ -14,9 +14,14 @@ import {
   getRemainingCooldown,
   setLastConfession,
   resetCooldown,
+  getRemainingPublicCooldown,
+  setLastPublicConfession,
+  resetPublicCooldown,
   resetAllCooldowns,
   getDelay,
   setDelay,
+  getPublicDelay,
+  setPublicDelay,
   formatDuration,
 } from './cooldowns.js';
 import {
@@ -212,9 +217,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.noContent, ephemeral: true });
     }
 
-    // Cooldown only applies to anonymous confessions
+    // Cooldown check (each mode has its own independent cooldown, 0 = disabled)
     if (anonymous) {
       const remaining = getRemainingCooldown(interaction.user.id);
+      if (remaining > 0) {
+        return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), ephemeral: true });
+      }
+    } else {
+      const remaining = getRemainingPublicCooldown(interaction.user.id);
       if (remaining > 0) {
         return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), ephemeral: true });
       }
@@ -286,12 +296,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (anonymous) {
       setLastConfession(interaction.user.id);
+      const delay = getDelay();
       await interaction.reply({
-        content: lang.success(formatDuration(getDelay())),
+        content: delay > 0 ? lang.success(formatDuration(delay)) : lang.successReveal,
         ephemeral: true,
       });
     } else {
-      await interaction.reply({ content: lang.successReveal, ephemeral: true });
+      setLastPublicConfession(interaction.user.id);
+      const publicDelay = getPublicDelay();
+      await interaction.reply({
+        content: publicDelay > 0 ? lang.success(formatDuration(publicDelay)) : lang.successReveal,
+        ephemeral: true,
+      });
     }
   }
 
@@ -388,13 +404,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (sub === 'reset') {
       const target = interaction.options.getUser('user');
       resetCooldown(target.id);
+      resetPublicCooldown(target.id);
       return interaction.reply({ content: lang.resetSuccess(target.username), ephemeral: true });
     }
 
     if (sub === 'setdelay') {
+      const type  = interaction.options.getString('type');
       const hours = interaction.options.getNumber('hours');
-      setDelay(hours * 3600000);
-      return interaction.reply({ content: lang.delaySuccess(hours), ephemeral: true });
+      const ms    = hours * 3600000;
+      if (type === 'anonymous') setDelay(ms);
+      else setPublicDelay(ms);
+      const content = hours === 0 ? lang.delayDisabled(type) : lang.delaySuccess(hours, type);
+      return interaction.reply({ content, ephemeral: true });
     }
 
     if (sub === 'delete') {

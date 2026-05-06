@@ -86,8 +86,9 @@ export default {
 
   // /admin
   adminDenied:  '❌ You do not have permission to use this command.',
-  resetSuccess: (u) => `✅ Cooldown reset for **${u}**. They can post a confession immediately.`,
-  delaySuccess: (h) => `✅ Cooldown updated: users can now post every **${h}h**.`,
+  resetSuccess:  (u) => `✅ Cooldowns reset for **${u}** (anonymous + public).`,
+  delaySuccess:  (h, type) => `✅ **${type === 'anonymous' ? 'Anonymous' : 'Public'}** cooldown updated: **${h}h**.`,
+  delayDisabled: (type) => `✅ **${type === 'anonymous' ? 'Anonymous' : 'Public'}** cooldown disabled.`,
   deleteSuccess:        (n) => `✅ Confession **#${n}** has been deleted.`,
   deleteNotFound:       '❌ No confession found with that number.',
   deletedEmbedDesc:     'This confession was deleted by the administrator.',

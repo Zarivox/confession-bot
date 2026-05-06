@@ -66,13 +66,23 @@ const adminCommand = new SlashCommandBuilder()
   .addSubcommand(sub =>
     sub
       .setName('setdelay')
-      .setDescription('Change the cooldown duration for everyone')
+      .setDescription('Change the cooldown for anonymous or public confessions (0 = disabled)')
+      .addStringOption(option =>
+        option
+          .setName('type')
+          .setDescription('Which cooldown to change')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Anonymous', value: 'anonymous' },
+            { name: 'Public (reveal)', value: 'public' },
+          )
+      )
       .addNumberOption(option =>
         option
           .setName('hours')
-          .setDescription('New cooldown in hours (e.g. 3 for 3h, 0.5 for 30min)')
+          .setDescription('Cooldown in hours (0 to disable, e.g. 0.5 for 30min)')
           .setRequired(true)
-          .setMinValue(0.1)
+          .setMinValue(0)
           .setMaxValue(168)
       )
   )

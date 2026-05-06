@@ -3,11 +3,15 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 const FILE = './cooldowns.json';
 
 function load() {
-  if (!existsSync(FILE)) return { delayMs: 6 * 60 * 60 * 1000, users: {} };
+  if (!existsSync(FILE)) return { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
   try {
-    return JSON.parse(readFileSync(FILE, 'utf-8'));
+    const data = JSON.parse(readFileSync(FILE, 'utf-8'));
+    // Migration: add missing fields if upgrading from older version
+    if (data.delayPublicMs === undefined) data.delayPublicMs = 0;
+    if (!data.usersPublic) data.usersPublic = {};
+    return data;
   } catch {
-    return { delayMs: 6 * 60 * 60 * 1000, users: {} };
+    return { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
   }
 }
 
@@ -15,8 +19,11 @@ function save(data) {
   writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
+// ─── Anonymous cooldown ───────────────────────────────────────────────────────
+
 export function getRemainingCooldown(userId) {
   const data = load();
+  if (!data.delayMs) return 0;
   const last = data.users[userId];
   if (!last) return 0;
   const remaining = last + data.delayMs - Date.now();
@@ -45,13 +52,49 @@ export function setDelay(ms) {
   save(data);
 }
 
-export function resetAllCooldowns() {
+// ─── Public (reveal) cooldown ─────────────────────────────────────────────────
+
+export function getRemainingPublicCooldown(userId) {
   const data = load();
-  data.users = {};
+  if (!data.delayPublicMs) return 0;
+  const last = data.usersPublic[userId];
+  if (!last) return 0;
+  const remaining = last + data.delayPublicMs - Date.now();
+  return remaining > 0 ? remaining : 0;
+}
+
+export function setLastPublicConfession(userId) {
+  const data = load();
+  data.usersPublic[userId] = Date.now();
   save(data);
 }
 
-// Formate les millisecondes en chaîne lisible (ex: "5h 30m 10s")
+export function resetPublicCooldown(userId) {
+  const data = load();
+  delete data.usersPublic[userId];
+  save(data);
+}
+
+export function getPublicDelay() {
+  return load().delayPublicMs;
+}
+
+export function setPublicDelay(ms) {
+  const data = load();
+  data.delayPublicMs = ms;
+  save(data);
+}
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+export function resetAllCooldowns() {
+  const data = load();
+  data.users = {};
+  data.usersPublic = {};
+  save(data);
+}
+
+// Format milliseconds to readable string (e.g. "5h 30m 10s")
 export function formatDuration(ms) {
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
