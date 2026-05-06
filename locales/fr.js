@@ -79,8 +79,10 @@ export default {
   banAlready:    (u) => `❌ **${u}** est déjà banni.`,
   unbanSuccess:  (u) => `✅ **${u}** a été débanni.`,
   banNotFound:   (u) => `❌ **${u}** n'est pas dans la liste des bannis.`,
-  banlistTitle:  '🚫 Membres bannis',
-  banlistEmpty:  '✅ Aucun membre banni.',
+  banlistTitle:       '🚫 Membres bannis',
+  banlistEmpty:       '✅ Aucun membre banni.',
+  clearbanWrongConfirm: '❌ Tu dois taper exactement **CLEARBAN** pour confirmer.',
+  clearbanSuccess:    (n) => `✅ Liste de bannissement vidée. **${n}** membre(s) débanni(s).`,
 
   // /admin
   adminDenied:   '❌ Tu n\'as pas la permission d\'utiliser cette commande.',

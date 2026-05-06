@@ -124,6 +124,17 @@ const adminCommand = new SlashCommandBuilder()
     sub
       .setName('banlist')
       .setDescription('Show all banned users')
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('clearban')
+      .setDescription('Remove ALL bans at once')
+      .addStringOption(option =>
+        option
+          .setName('confirm')
+          .setDescription('Type CLEARBAN to confirm')
+          .setRequired(true)
+      )
   );
 
 const rest = new REST().setToken(process.env.BOT_TOKEN);

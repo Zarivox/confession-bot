@@ -36,7 +36,7 @@ import {
   resetConsents,
   getAllConsents,
 } from './consents.js';
-import { isBanned, addBan, removeBan, getAllBans } from './bans.js';
+import { isBanned, addBan, removeBan, getAllBans, resetBans } from './bans.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID              = process.env.ADMIN_ID;
@@ -473,6 +473,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setFooter({ text: `${ids.length} membre(s)` })
         .setTimestamp();
       return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    if (sub === 'clearban') {
+      const confirm = interaction.options.getString('confirm');
+      if (confirm !== 'CLEARBAN') {
+        return interaction.reply({ content: lang.clearbanWrongConfirm, ephemeral: true });
+      }
+      const count = getAllBans().length;
+      resetBans();
+      return interaction.reply({ content: lang.clearbanSuccess(count), ephemeral: true });
     }
 
     if (sub === 'stats') {

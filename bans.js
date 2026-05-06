@@ -42,3 +42,7 @@ export function removeBan(userId) {
 export function getAllBans() {
   return load().list;
 }
+
+export function resetBans() {
+  save({ list: [] });
+}
