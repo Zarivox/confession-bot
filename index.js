@@ -103,9 +103,13 @@ function buildVoteRow(number, yesCount, noCount) {
   );
 }
 
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
   console.log(`Connecté en tant que ${c.user.tag}`);
   console.log(`Salon des confessions : ${CONFESSION_CHANNEL_ID}`);
+  try {
+    const admin = await c.users.fetch(ADMIN_ID);
+    await admin.send(lang.botReady(c.user.tag));
+  } catch { /* DMs fermés ou admin introuvable */ }
 });
 
 client.on(Events.MessageCreate, async msg => {
@@ -299,7 +303,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       setLastConfession(interaction.user.id);
       const delay = getDelay();
       await interaction.reply({
-        content: delay > 0 ? lang.success(formatDuration(delay)) : lang.successReveal,
+        content: delay > 0 ? lang.success(formatDuration(delay)) : lang.successNoDelay,
         ephemeral: true,
       });
     } else {

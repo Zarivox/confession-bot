@@ -9,7 +9,10 @@ export default {
   sendError:       '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
   saveError:       '❌ Erreur interne lors de l\'enregistrement. Réessaie dans quelques instants.',
   success:         (t) => `✅ Ta confession a été postée anonymement ! Tu pourras en poster une nouvelle dans **${t}**.`,
+  successNoDelay:  `✅ Ta confession a été postée anonymement !`,
   successReveal:   `✅ Ta confession a été postée avec ton identité.`,
+  successRevealNoDelay: `✅ Ta confession a été postée avec ton identité.`,
+  botReady:        (tag) => `✅ Bot **${tag}** démarré et en ligne.`,
 
   // Embed
   embedTitle:  '💬 Confession anonyme',

@@ -9,7 +9,10 @@ export default {
   sendError:       '❌ Failed to send your confession. Check the bot permissions in the channel.',
   saveError:       '❌ Internal error while saving. Please try again in a moment.',
   success:         (t) => `✅ Your confession has been posted anonymously! You can post again in **${t}**.`,
+  successNoDelay:  `✅ Your confession has been posted anonymously!`,
   successReveal:   `✅ Your confession has been posted with your identity.`,
+  successRevealNoDelay: `✅ Your confession has been posted with your identity.`,
+  botReady:        (tag) => `✅ Bot **${tag}** started and online.`,
 
   // Embed
   embedTitle:      '💬 Anonymous Confession',
