@@ -35,3 +35,11 @@ export function resetConsents() {
 export function getAllConsents() {
   return load().list;
 }
+
+export function removeConsent(userId) {
+  const data = load();
+  const idx = data.list.indexOf(userId);
+  if (idx === -1) return;
+  data.list.splice(idx, 1);
+  save(data);
+}

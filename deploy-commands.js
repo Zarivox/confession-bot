@@ -119,7 +119,10 @@ const adminCommand = new SlashCommandBuilder()
       .setName('ban')
       .setDescription('Ban a user from the confession system')
       .addUserOption(option =>
-        option.setName('user').setDescription('User to ban').setRequired(true)
+        option.setName('user').setDescription('User to ban (if still in the server)').setRequired(false)
+      )
+      .addStringOption(option =>
+        option.setName('id').setDescription('User ID to ban (if they left the server)').setRequired(false)
       )
   )
   .addSubcommand(sub =>
@@ -127,7 +130,10 @@ const adminCommand = new SlashCommandBuilder()
       .setName('unban')
       .setDescription('Unban a user from the confession system')
       .addUserOption(option =>
-        option.setName('user').setDescription('User to unban').setRequired(true)
+        option.setName('user').setDescription('User to unban (if still in the server)').setRequired(false)
+      )
+      .addStringOption(option =>
+        option.setName('id').setDescription('User ID to unban (if they left the server)').setRequired(false)
       )
   )
   .addSubcommand(sub =>

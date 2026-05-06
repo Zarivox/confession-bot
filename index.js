@@ -38,6 +38,7 @@ import {
 import {
   hasConsented,
   addConsent,
+  removeConsent,
   resetConsents,
   getAllConsents,
 } from './consents.js';
@@ -470,16 +471,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (sub === 'ban') {
       const target = interaction.options.getUser('user');
-      const ok = addBan(target.id);
-      if (!ok) return interaction.reply({ content: lang.banAlready(target.username), ephemeral: true });
-      return interaction.reply({ content: lang.banSuccess(target.username), ephemeral: true });
+      const rawId  = interaction.options.getString('id');
+      if (!target && !rawId) {
+        return interaction.reply({ content: lang.banNoTarget, ephemeral: true });
+      }
+      const userId   = target?.id ?? rawId;
+      const username = target?.username ?? rawId;
+      const ok = addBan(userId);
+      if (!ok) return interaction.reply({ content: lang.banAlready(username), ephemeral: true });
+      removeConsent(userId);
+      return interaction.reply({ content: lang.banSuccess(username), ephemeral: true });
     }
 
     if (sub === 'unban') {
       const target = interaction.options.getUser('user');
-      const ok = removeBan(target.id);
-      if (!ok) return interaction.reply({ content: lang.banNotFound(target.username), ephemeral: true });
-      return interaction.reply({ content: lang.unbanSuccess(target.username), ephemeral: true });
+      const rawId  = interaction.options.getString('id');
+      if (!target && !rawId) {
+        return interaction.reply({ content: lang.banNoTarget, ephemeral: true });
+      }
+      const userId   = target?.id ?? rawId;
+      const username = target?.username ?? rawId;
+      const ok = removeBan(userId);
+      if (!ok) return interaction.reply({ content: lang.banNotFound(username), ephemeral: true });
+      return interaction.reply({ content: lang.unbanSuccess(username), ephemeral: true });
     }
 
     if (sub === 'banlist') {

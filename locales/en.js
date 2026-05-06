@@ -75,8 +75,9 @@ export default {
 
   // Ban
   banned:        '🚫 You are banned and can no longer interact with the confession bot.',
-  banSuccess:    (u) => `✅ **${u}** has been banned from the confession system.`,
+  banSuccess:    (u) => `✅ **${u}** has been banned and removed from the participant list.`,
   banAlready:    (u) => `❌ **${u}** is already banned.`,
+  banNoTarget:   '❌ Provide a user or a user ID.',
   unbanSuccess:  (u) => `✅ **${u}** has been unbanned.`,
   banNotFound:   (u) => `❌ **${u}** is not in the ban list.`,
   banlistTitle:         '🚫 Banned members',
