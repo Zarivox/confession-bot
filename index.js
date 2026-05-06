@@ -116,6 +116,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const match = interaction.customId.match(/^vote_(yes|no)_(\d+)$/);
     if (!match) return;
 
+    if (!hasConsented(interaction.user.id)) {
+      return interaction.reply({ content: lang.joinNotConsented, ephemeral: true });
+    }
+
     const choice = match[1];
     const number = parseInt(match[2], 10);
 
@@ -269,12 +273,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.editReply(lang.playerlistEmpty);
     }
 
-    const mentions = ids.map(id => `<@${id}>`).join('\n');
+    // Discord embed description limit: 4096 chars — cap at 150 mentions to be safe
+    const shown    = ids.slice(0, 150);
+    const overflow = ids.length - shown.length;
+    let description = shown.map(id => `<@${id}>`).join('\n');
+    if (overflow > 0) description += `\n*… et ${overflow} autres*`;
 
     const embed = new EmbedBuilder()
       .setColor(0xE8C547)
       .setTitle(`${lang.playerlistTitle} (${ids.length})`)
-      .setDescription(mentions)
+      .setDescription(description)
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
