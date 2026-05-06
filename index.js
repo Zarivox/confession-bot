@@ -154,18 +154,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const nextNumber = getCount() + 1;
 
-    const footerText = anonymous
-      ? lang.embedFooter
-      : interaction.user.username;
-
     const titleText = anonymous
       ? `${lang.embedTitle} #${nextNumber}`
       : `💬 Confession #${nextNumber}`;
 
+    const footer = anonymous
+      ? { text: lang.embedFooter }
+      : { text: interaction.user.username, iconURL: interaction.user.displayAvatarURL({ size: 64 }) };
+
     const embed = new EmbedBuilder()
       .setColor(anonymous ? 0xE8C547 : 0x5865F2)
       .setTitle(titleText)
-      .setFooter({ text: footerText })
+      .setFooter(footer)
       .setTimestamp();
 
     if (message) embed.setDescription(message);
