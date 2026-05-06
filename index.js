@@ -105,7 +105,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     addConsent(interaction.user.id);
     const confirmedEmbed = new EmbedBuilder()
       .setColor(0x57F287)
-      .setTitle('✅ Contrat signé !')
+      .setTitle(lang.joinSuccessTitle)
       .setDescription(lang.joinSuccess)
       .setTimestamp();
     return interaction.update({ embeds: [confirmedEmbed], components: [] });
@@ -406,15 +406,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setColor(0xE8C547)
-        .setTitle('📊 Confession Statistics')
+        .setTitle(lang.statsTitle)
         .addFields(
-          { name: '📝 Total',       value: `${all.length} confessions`,     inline: true },
-          { name: '📅 This week',   value: `${week.length} confessions`,    inline: true },
-          { name: '🌅 Today',       value: `${today.length} confessions`,   inline: true },
-          { name: '✅ Upvotes',     value: `${totalYes} (${posRatio}%)`,    inline: true },
-          { name: '❌ Downvotes',   value: `${totalNo} (${100-posRatio}%)`, inline: true },
-          { name: '📈 Avg/day',     value: `${avgPerDay}`,                  inline: true },
-          { name: '⏰ Peak hour (UTC)', value: `${peakHour}h–${peakHour+1}h`, inline: true },
+          { name: lang.statsTotal,     value: `${all.length} confessions`,     inline: true },
+          { name: lang.statsWeek,      value: `${week.length} confessions`,    inline: true },
+          { name: lang.statsToday,     value: `${today.length} confessions`,   inline: true },
+          { name: lang.statsUpvotes,   value: `${totalYes} (${posRatio}%)`,    inline: true },
+          { name: lang.statsDownvotes, value: `${totalNo} (${100-posRatio}%)`, inline: true },
+          { name: lang.statsAvg,       value: `${avgPerDay}`,                  inline: true },
+          { name: lang.statsPeak,      value: `${peakHour}h–${peakHour+1}h`,  inline: true },
         )
         .setTimestamp();
 

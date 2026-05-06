@@ -49,8 +49,9 @@ export default {
     '**5. Engagement**',
     "En cliquant sur **J'accepte**, tu confirmes avoir lu ces conditions, les comprendre, et t'engager à les respecter.",
   ].join('\n'),
-  joinButton:       "J'accepte",
-  joinNotConsented: '❌ Tu dois d\'abord signer le contrat avec `/join` pour poster une confession.',
+  joinButton:        "J'accepte",
+  joinSuccessTitle:  '✅ Contrat signé !',
+  joinNotConsented:  '❌ Tu dois d\'abord signer le contrat avec `/join` pour poster une confession.',
 
   // /playerlist
   playerlistTitle:  '📋 Membres ayant signé le contrat',
@@ -59,6 +60,16 @@ export default {
   // Helper interne
   authorResult:    (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
   revealAdminOnly: '❌ Cette action est réservée à l\'administrateur.',
+
+  // /admin stats
+  statsTitle:    '📊 Statistiques des confessions',
+  statsTotal:    '📝 Total',
+  statsWeek:     '📅 Cette semaine',
+  statsToday:    '🌅 Aujourd\'hui',
+  statsUpvotes:  '✅ Votes positifs',
+  statsDownvotes:'❌ Votes négatifs',
+  statsAvg:      '📈 Moyenne/jour',
+  statsPeak:     '⏰ Heure de pointe (UTC)',
 
   // /admin
   adminDenied:   '❌ Tu n\'as pas la permission d\'utiliser cette commande.',

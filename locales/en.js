@@ -50,6 +50,7 @@ export default {
     "By clicking **I agree**, you confirm that you have read, understood, and agree to abide by these terms.",
   ].join('\n'),
   joinButton:        'I agree',
+  joinSuccessTitle:  '✅ Contract signed!',
   joinNotConsented:  '❌ You must first sign the contract with `/join` before posting a confession.',
 
   // /playerlist
@@ -59,6 +60,16 @@ export default {
   // Internal helper
   authorResult:    (n, tag, id) => `🔍 Confession **#${n}** was posted by **${tag}** (<@${id}>)`,
   revealAdminOnly: '❌ This action is reserved for the administrator.',
+
+  // /admin stats
+  statsTitle:    '📊 Confession Statistics',
+  statsTotal:    '📝 Total',
+  statsWeek:     '📅 This week',
+  statsToday:    '🌅 Today',
+  statsUpvotes:  '✅ Upvotes',
+  statsDownvotes:'❌ Downvotes',
+  statsAvg:      '📈 Avg/day',
+  statsPeak:     '⏰ Peak hour (UTC)',
 
   // /admin
   adminDenied:  '❌ You do not have permission to use this command.',
