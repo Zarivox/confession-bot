@@ -20,5 +20,5 @@ jobs:
             cd /root/confession-bot
             git pull
             npm install --omit=dev
-            pm2 restart confession-bot || pm2 start index.js --name confession-bot --interpreter node
+            pm2 restart confession-bot
             pm2 save
