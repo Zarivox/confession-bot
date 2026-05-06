@@ -8,6 +8,7 @@ export default {
   invalidImage:    '❌ Le fichier joint n\'est pas une image valide.',
   sendError:       '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
   success:         (t) => `✅ Ta confession a été postée anonymement ! Tu pourras en poster une nouvelle dans **${t}**.`,
+  successReveal:   `✅ Ta confession a été postée avec ton identité.`,
 
   // Embed
   embedTitle:  '💬 Confession anonyme',
@@ -24,14 +25,14 @@ export default {
   alreadyVoted:      '❌ Tu as déjà voté sur cette confession.',
   confessionNotFound:'❌ Confession introuvable.',
 
-  // Reveal (menu contextuel)
-  actionLabel:       'Voir l\'auteur',
-  helperNotFound:    '❌ Ce message n\'est pas lié à une confession connue.',
-  authorResult:      (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
-  revealAdminOnly:   '❌ Cette action est réservée à l\'administrateur.',
+  // Helper interne
+  authorResult:    (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
+  revealAdminOnly: '❌ Cette action est réservée à l\'administrateur.',
 
   // /admin
-  adminDenied:  '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
-  resetSuccess: (u) => `✅ Le cooldown de **${u}** a été réinitialisé. Il peut poster une confession immédiatement.`,
-  delaySuccess: (h) => `✅ Délai mis à jour : les utilisateurs peuvent maintenant poster toutes les **${h}h**.`,
+  adminDenied:   '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
+  resetSuccess:  (u) => `✅ Le cooldown de **${u}** a été réinitialisé. Il peut poster une confession immédiatement.`,
+  delaySuccess:  (h) => `✅ Délai mis à jour : les utilisateurs peuvent maintenant poster toutes les **${h}h**.`,
+  deleteSuccess: (n) => `✅ La confession **#${n}** a été supprimée et les suivantes ont été renumérotées.`,
+  deleteNotFound: '❌ Aucune confession trouvée avec ce numéro.',
 };

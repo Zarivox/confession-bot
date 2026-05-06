@@ -101,7 +101,3 @@ export function getAll() {
 export function getSince(timestampMs) {
   return load().list.filter(c => c.timestamp >= timestampMs);
 }
-
-export function getConfessionByMessageId(messageId) {
-  return load().list.find(c => c.messageId === messageId) ?? null;
-}

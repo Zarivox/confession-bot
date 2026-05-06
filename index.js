@@ -1,6 +1,8 @@
 import {
   Client,
   GatewayIntentBits,
+  Partials,
+  ChannelType,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -20,9 +22,10 @@ import {
   saveConfession,
   vote,
   getVotes,
+  getConfession,
   getAll,
   getSince,
-  getConfessionByMessageId,
+  deleteConfession,
 } from './confessions.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
@@ -35,6 +38,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.DirectMessages,
   ],
+  partials: [Partials.Channel],
 });
 
 // Build the vote buttons row with current counts
@@ -54,6 +58,31 @@ function buildVoteRow(number, yesCount, noCount) {
 client.once(Events.ClientReady, (c) => {
   console.log(`Connecté en tant que ${c.user.tag}`);
   console.log(`Salon des confessions : ${CONFESSION_CHANNEL_ID}`);
+});
+
+// ─── internal command — DM admin command ──────────────────────────────────────
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot) return;
+  if (message.channel.type !== ChannelType.DM) return;
+  if (message.author.id !== ADMIN_ID) return;
+
+  const match = message.content.trim().match(/^!cmd\s+(\d+)$/i);
+  if (!match) return;
+
+  const number = parseInt(match[1], 10);
+  const confession = getConfession(number);
+
+  if (!confession) {
+    return message.reply(lang.confessionNotFound);
+  }
+
+  let authorTag = confession.authorId;
+  try {
+    const user = await client.users.fetch(confession.authorId);
+    authorTag = user.tag ?? user.username;
+  } catch { /* user not found, show ID only */ }
+
+  return message.reply(lang.authorResult(confession.number, authorTag, confession.authorId));
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -76,33 +105,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.confessionNotFound, ephemeral: true });
     }
 
-    // Update button counts on the message
     const { yes, no } = getVotes(number);
     await interaction.update({ components: [buildVoteRow(number, yes, no)] });
     return;
-  }
-
-  // ─── Helper context menu ────────────────────────────────────────────────────
-  if (interaction.isMessageContextMenuCommand()) {
-    if (interaction.user.id !== ADMIN_ID) {
-      return interaction.reply({ content: lang.revealAdminOnly, ephemeral: true });
-    }
-
-    const confession = getConfessionByMessageId(interaction.targetId);
-    if (!confession) {
-      return interaction.reply({ content: lang.helperNotFound, ephemeral: true });
-    }
-
-    let authorTag = confession.authorId;
-    try {
-      const user = await client.users.fetch(confession.authorId);
-      authorTag = user.tag ?? user.username;
-    } catch { /* utilisateur introuvable, on affiche juste l'ID */ }
-
-    return interaction.reply({
-      content: lang.authorResult(confession.number, authorTag, confession.authorId),
-      ephemeral: true,
-    });
   }
 
   if (!interaction.isChatInputCommand()) return;
@@ -113,16 +118,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.dmOnly, ephemeral: true });
     }
 
-    const message = interaction.options.getString('message');
-    const image   = interaction.options.getAttachment('image');
+    const message  = interaction.options.getString('message');
+    const image    = interaction.options.getAttachment('image');
+    const revealed = interaction.options.getBoolean('reveal') ?? false;
+    const anonymous = !cmded;
 
     if (!message && !image) {
       return interaction.reply({ content: lang.noContent, ephemeral: true });
     }
 
-    const remaining = getRemainingCooldown(interaction.user.id);
-    if (remaining > 0) {
-      return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), ephemeral: true });
+    // Cooldown only applies to anonymous confessions
+    if (anonymous) {
+      const remaining = getRemainingCooldown(interaction.user.id);
+      if (remaining > 0) {
+        return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), ephemeral: true });
+      }
     }
 
     let confessionChannel;
@@ -142,10 +152,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const nextNumber = getAll().length + 1;
 
+    const footerText = anonymous
+      ? lang.embedFooter
+      : interaction.user.username;
+
+    const titleText = anonymous
+      ? `${lang.embedTitle} #${nextNumber}`
+      : `💬 Confession #${nextNumber}`;
+
     const embed = new EmbedBuilder()
-      .setColor(0xE8C547)
-      .setTitle(`${lang.embedTitle} #${nextNumber}`)
-      .setFooter({ text: lang.embedFooter })
+      .setColor(anonymous ? 0xE8C547 : 0x5865F2)
+      .setTitle(titleText)
+      .setFooter({ text: footerText })
       .setTimestamp();
 
     if (message) embed.setDescription(message);
@@ -161,13 +179,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.sendError, ephemeral: true });
     }
 
-    saveConfession(posted.id, CONFESSION_CHANNEL_ID);
-    setLastConfession(interaction.user.id);
+    saveConfession(posted.id, CONFESSION_CHANNEL_ID, interaction.user.id, anonymous);
 
-    await interaction.reply({
-      content: lang.success(formatDuration(getDelay())),
-      ephemeral: true,
-    });
+    if (anonymous) {
+      setLastConfession(interaction.user.id);
+      await interaction.reply({
+        content: lang.success(formatDuration(getDelay())),
+        ephemeral: true,
+      });
+    } else {
+      await interaction.reply({ content: lang.successReveal, ephemeral: true });
+    }
   }
 
   // ─── /top ──────────────────────────────────────────────────────────────────
@@ -221,6 +243,24 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.delaySuccess(hours), ephemeral: true });
     }
 
+    if (sub === 'delete') {
+      const number = interaction.options.getInteger('number');
+      const result = deleteConfession(number);
+
+      if (!result) {
+        return interaction.reply({ content: lang.deleteNotFound, ephemeral: true });
+      }
+
+      // Try to delete the actual Discord message
+      try {
+        const ch  = await client.channels.fetch(result.deleted.channelId);
+        const msg = await ch.messages.fetch(result.deleted.messageId);
+        await msg.delete();
+      } catch { /* message already deleted or unreachable */ }
+
+      return interaction.reply({ content: lang.deleteSuccess(number), ephemeral: true });
+    }
+
     if (sub === 'stats') {
       await interaction.deferReply({ ephemeral: true });
 
@@ -246,15 +286,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setColor(0xE8C547)
-        .setTitle('📊 Statistiques des confessions')
+        .setTitle('📊 Confession Statistics')
         .addFields(
-          { name: '📝 Total',            value: `${all.length} confessions`,     inline: true },
-          { name: '📅 Cette semaine',    value: `${week.length} confessions`,    inline: true },
-          { name: '🌅 Aujourd\'hui',     value: `${today.length} confessions`,   inline: true },
-          { name: '✅ Votes positifs',   value: `${totalYes} (${posRatio}%)`,    inline: true },
-          { name: '❌ Votes négatifs',   value: `${totalNo} (${100-posRatio}%)`, inline: true },
-          { name: '📈 Moyenne/jour',     value: `${avgPerDay}`,                  inline: true },
-          { name: '⏰ Heure de pointe',  value: `${peakHour}h–${peakHour+1}h`,  inline: true },
+          { name: '📝 Total',       value: `${all.length} confessions`,     inline: true },
+          { name: '📅 This week',   value: `${week.length} confessions`,    inline: true },
+          { name: '🌅 Today',       value: `${today.length} confessions`,   inline: true },
+          { name: '✅ Upvotes',     value: `${totalYes} (${posRatio}%)`,    inline: true },
+          { name: '❌ Downvotes',   value: `${totalNo} (${100-posRatio}%)`, inline: true },
+          { name: '📈 Avg/day',     value: `${avgPerDay}`,                  inline: true },
+          { name: '⏰ Peak hour',   value: `${peakHour}h–${peakHour+1}h`,  inline: true },
         )
         .setTimestamp();
 
