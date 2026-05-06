@@ -20,6 +20,10 @@ export default {
   periodMonth: 'Ce mois-ci',
   periodAll:   'Depuis toujours',
 
+  // Votes
+  alreadyVoted:      '❌ Tu as déjà voté sur cette confession.',
+  confessionNotFound:'❌ Confession introuvable.',
+
   // /admin
   adminDenied:  '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
   resetSuccess: (u) => `✅ Le cooldown de **${u}** a été réinitialisé. Il peut poster une confession immédiatement.`,

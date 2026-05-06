@@ -1,4 +1,12 @@
-import { Client, GatewayIntentBits, EmbedBuilder, Events } from 'discord.js';
+import {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  Events,
+} from 'discord.js';
 import 'dotenv/config';
 import {
   getRemainingCooldown,
@@ -10,12 +18,14 @@ import {
 } from './cooldowns.js';
 import {
   saveConfession,
+  vote,
+  getVotes,
   getAll,
   getSince,
 } from './confessions.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
-const ADMIN_ID = process.env.ADMIN_ID;
+const ADMIN_ID              = process.env.ADMIN_ID;
 
 const lang = (await import(`./locales/${process.env.LANG === 'fr' ? 'fr' : 'en'}.js`)).default;
 
@@ -26,12 +36,51 @@ const client = new Client({
   ],
 });
 
+// Build the vote buttons row with current counts
+function buildVoteRow(number, yesCount, noCount) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`vote_yes_${number}`)
+      .setLabel(`✅  ${yesCount}`)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`vote_no_${number}`)
+      .setLabel(`❌  ${noCount}`)
+      .setStyle(ButtonStyle.Secondary),
+  );
+}
+
 client.once(Events.ClientReady, (c) => {
   console.log(`Connecté en tant que ${c.user.tag}`);
   console.log(`Salon des confessions : ${CONFESSION_CHANNEL_ID}`);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+
+  // ─── Vote buttons ───────────────────────────────────────────────────────────
+  if (interaction.isButton()) {
+    const match = interaction.customId.match(/^vote_(yes|no)_(\d+)$/);
+    if (!match) return;
+
+    const choice = match[1];
+    const number = parseInt(match[2], 10);
+
+    const result = vote(number, interaction.user.id, choice);
+
+    if (result === 'already_voted') {
+      return interaction.reply({ content: lang.alreadyVoted, ephemeral: true });
+    }
+
+    if (result === 'not_found') {
+      return interaction.reply({ content: lang.confessionNotFound, ephemeral: true });
+    }
+
+    // Update button counts on the message
+    const { yes, no } = getVotes(number);
+    await interaction.update({ components: [buildVoteRow(number, yes, no)] });
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   // ─── /confession ───────────────────────────────────────────────────────────
@@ -67,7 +116,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.invalidImage, ephemeral: true });
     }
 
-    // Numéro de confession provisoire pour construire l'embed
     const nextNumber = getAll().length + 1;
 
     const embed = new EmbedBuilder()
@@ -81,15 +129,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     let posted;
     try {
-      posted = await confessionChannel.send({ embeds: [embed] });
-      await posted.react('✅');
-      await posted.react('❌');
+      posted = await confessionChannel.send({
+        embeds:     [embed],
+        components: [buildVoteRow(nextNumber, 0, 0)],
+      });
     } catch {
       return interaction.reply({ content: lang.sendError, ephemeral: true });
     }
 
-    // Enregistrer la confession avec l'ID du message Discord
-    const number = saveConfession(posted.id, CONFESSION_CHANNEL_ID);
+    saveConfession(posted.id, CONFESSION_CHANNEL_ID);
     setLastConfession(interaction.user.id);
 
     await interaction.reply({
@@ -103,52 +151,28 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.deferReply();
 
     const period = interaction.options.getString('période') ?? 'week';
+    const since  = period === 'all' ? 0 : Date.now() - { week: 7, month: 30 }[period] * 86400000;
 
-    const periodMs = {
-      week:  7  * 24 * 60 * 60 * 1000,
-      month: 30 * 24 * 60 * 60 * 1000,
-      all:   Infinity,
-    }[period];
-
-    const since = period === 'all' ? 0 : Date.now() - periodMs;
     const confessions = getSince(since);
-
     if (confessions.length === 0) {
       return interaction.editReply(lang.topEmpty);
     }
 
-    // Récupérer les votes depuis Discord
-    const channel = await client.channels.fetch(CONFESSION_CHANNEL_ID);
-    const withVotes = [];
+    const withVotes = confessions.map(c => ({
+      ...c,
+      yes: c.votes?.yes?.length ?? 0,
+      no:  c.votes?.no?.length  ?? 0,
+    }));
 
-    for (const c of confessions) {
-      try {
-        const msg = await channel.messages.fetch(c.messageId);
-        const yes = msg.reactions.cache.get('✅')?.count ?? 1;
-        const no  = msg.reactions.cache.get('❌')?.count ?? 1;
-        withVotes.push({ ...c, yes: yes - 1, no: no - 1 }); // -1 pour enlever le vote du bot
-      } catch {
-        // Message supprimé, on l'ignore
-      }
-    }
-
-    // Trier par ✅ décroissant et prendre le top 5
-    const top5 = withVotes
-      .sort((a, b) => b.yes - a.yes)
-      .slice(0, 5);
+    const top5 = withVotes.sort((a, b) => b.yes - a.yes).slice(0, 5);
 
     const periodLabel = { week: lang.periodWeek, month: lang.periodMonth, all: lang.periodAll }[period];
 
     const embed = new EmbedBuilder()
       .setColor(0xE8C547)
       .setTitle(`🏆 ${lang.topTitle} — ${periodLabel}`)
+      .setDescription(top5.map(c => `**#${c.number}** — ✅ ${c.yes}  ·  ❌ ${c.no}`).join('\n'))
       .setTimestamp();
-
-    const lines = top5.map((c, i) =>
-      `**#${c.number}** — ✅ ${c.yes} · ❌ ${c.no}`
-    );
-
-    embed.setDescription(lines.join('\n'));
 
     await interaction.editReply({ embeds: [embed] });
   }
@@ -177,35 +201,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await interaction.deferReply({ ephemeral: true });
 
       const all   = getAll();
-      const week  = getSince(Date.now() - 7  * 24 * 60 * 60 * 1000);
-      const today = getSince(Date.now() - 24 * 60 * 60 * 1000);
+      const week  = getSince(Date.now() - 7  * 86400000);
+      const today = getSince(Date.now() - 86400000);
 
-      // Récupérer les votes de toutes les confessions
-      const channel = await client.channels.fetch(CONFESSION_CHANNEL_ID);
       let totalYes = 0, totalNo = 0;
-
-      // Calculer l'heure de pointe
       const hourCounts = new Array(24).fill(0);
 
       for (const c of all) {
-        const h = new Date(c.timestamp).getHours();
-        hourCounts[h]++;
-
-        try {
-          const msg = await channel.messages.fetch(c.messageId);
-          const yes = (msg.reactions.cache.get('✅')?.count ?? 1) - 1;
-          const no  = (msg.reactions.cache.get('❌')?.count ?? 1) - 1;
-          totalYes += yes;
-          totalNo  += no;
-        } catch {
-          // Message supprimé
-        }
+        hourCounts[new Date(c.timestamp).getHours()]++;
+        totalYes += c.votes?.yes?.length ?? 0;
+        totalNo  += c.votes?.no?.length  ?? 0;
       }
 
-      const peakHour  = hourCounts.indexOf(Math.max(...hourCounts));
+      const peakHour   = hourCounts.indexOf(Math.max(...hourCounts));
       const totalVotes = totalYes + totalNo;
-      const posRatio  = totalVotes > 0 ? Math.round((totalYes / totalVotes) * 100) : 0;
-      const avgPerDay = all.length > 0
+      const posRatio   = totalVotes > 0 ? Math.round((totalYes / totalVotes) * 100) : 0;
+      const avgPerDay  = all.length > 0
         ? (all.length / Math.max(1, Math.ceil((Date.now() - all[0].timestamp) / 86400000))).toFixed(1)
         : 0;
 
@@ -213,13 +224,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setColor(0xE8C547)
         .setTitle('📊 Statistiques des confessions')
         .addFields(
-          { name: '📝 Total',           value: `${all.length} confessions`,    inline: true },
-          { name: '📅 Cette semaine',   value: `${week.length} confessions`,   inline: true },
-          { name: '🌅 Aujourd\'hui',    value: `${today.length} confessions`,  inline: true },
-          { name: '✅ Votes positifs',  value: `${totalYes} (${posRatio}%)`,   inline: true },
-          { name: '❌ Votes négatifs',  value: `${totalNo} (${100-posRatio}%)`, inline: true },
-          { name: '📈 Moyenne/jour',    value: `${avgPerDay}`,                 inline: true },
-          { name: '⏰ Heure de pointe', value: `${peakHour}h–${peakHour+1}h`, inline: true },
+          { name: '📝 Total',            value: `${all.length} confessions`,     inline: true },
+          { name: '📅 Cette semaine',    value: `${week.length} confessions`,    inline: true },
+          { name: '🌅 Aujourd\'hui',     value: `${today.length} confessions`,   inline: true },
+          { name: '✅ Votes positifs',   value: `${totalYes} (${posRatio}%)`,    inline: true },
+          { name: '❌ Votes négatifs',   value: `${totalNo} (${100-posRatio}%)`, inline: true },
+          { name: '📈 Moyenne/jour',     value: `${avgPerDay}`,                  inline: true },
+          { name: '⏰ Heure de pointe',  value: `${peakHour}h–${peakHour+1}h`,  inline: true },
         )
         .setTimestamp();
 
