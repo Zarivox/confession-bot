@@ -1,2 +1,8 @@
 node_modules/
 .env
+
+# Runtime data files (generated on first run, not versioned)
+confessions.json
+cooldowns.json
+consents.json
+*.json.tmp
