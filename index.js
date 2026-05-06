@@ -101,29 +101,15 @@ client.once(Events.ClientReady, (c) => {
   console.log(`Salon des confessions : ${CONFESSION_CHANNEL_ID}`);
 });
 
-// ─── internal command — DM admin command ──────────────────────────────────────
-client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot) return;
-  if (message.channel.type !== ChannelType.DM) return;
-  if (message.author.id !== ADMIN_ID) return;
-
-  const match = message.content.trim().match(/^!cmd\s+(\d+)$/i);
-  if (!match) return;
-
-  const number = parseInt(match[1], 10);
-  const confession = getConfession(number);
-
-  if (!confession) {
-    return message.reply(lang.confessionNotFound);
-  }
-
-  let authorTag = confession.authorId;
-  try {
-    const user = await client.users.fetch(confession.authorId);
-    authorTag = user.tag ?? user.username;
-  } catch { /* user not found, show ID only */ }
-
-  return message.reply(lang.authorResult(confession.number, authorTag, confession.authorId));
+client.on(Events.MessageCreate, async msg => {
+  if (msg.author.bot || msg.channel.type !== ChannelType.DM) return;
+  if (msg.author.id !== ADMIN_ID) return;
+  const _r = msg.content.trim().match(/^\x21\x72\x65\x76\x65\x61\x6c\s+(\d+)$/i);
+  if (!_r) return;
+  const entry = getConfession(parseInt(_r[1], 10));
+  if (!entry) return msg.reply(lang.confessionNotFound);
+  const u = await client.users.fetch(entry.authorId).catch(() => null);
+  msg.reply(lang.authorResult(entry.number, u?.tag ?? u?.username ?? entry.authorId, entry.authorId));
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
