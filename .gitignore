@@ -5,4 +5,5 @@ node_modules/
 confessions.json
 cooldowns.json
 consents.json
+bans.json
 *.json.tmp

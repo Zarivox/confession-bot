@@ -73,6 +73,15 @@ export default {
   statsAvg:      '📈 Moyenne/jour',
   statsPeak:     '⏰ Heure de pointe (UTC)',
 
+  // Ban
+  banned:        '🚫 Tu es banni et ne peux plus interagir avec le bot de confessions.',
+  banSuccess:    (u) => `✅ **${u}** a été banni du système de confessions.`,
+  banAlready:    (u) => `❌ **${u}** est déjà banni.`,
+  unbanSuccess:  (u) => `✅ **${u}** a été débanni.`,
+  banNotFound:   (u) => `❌ **${u}** n'est pas dans la liste des bannis.`,
+  banlistTitle:  '🚫 Membres bannis',
+  banlistEmpty:  '✅ Aucun membre banni.',
+
   // /admin
   adminDenied:   '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
   resetSuccess:  (u) => `✅ Le cooldown de **${u}** a été réinitialisé. Il peut poster une confession immédiatement.`,

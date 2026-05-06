@@ -73,6 +73,15 @@ export default {
   statsAvg:      '📈 Avg/day',
   statsPeak:     '⏰ Peak hour (UTC)',
 
+  // Ban
+  banned:        '🚫 You are banned and can no longer interact with the confession bot.',
+  banSuccess:    (u) => `✅ **${u}** has been banned from the confession system.`,
+  banAlready:    (u) => `❌ **${u}** is already banned.`,
+  unbanSuccess:  (u) => `✅ **${u}** has been unbanned.`,
+  banNotFound:   (u) => `❌ **${u}** is not in the ban list.`,
+  banlistTitle:  '🚫 Banned members',
+  banlistEmpty:  '✅ No banned members.',
+
   // /admin
   adminDenied:  '❌ You do not have permission to use this command.',
   resetSuccess: (u) => `✅ Cooldown reset for **${u}**. They can post a confession immediately.`,

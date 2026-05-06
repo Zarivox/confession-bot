@@ -103,6 +103,27 @@ const adminCommand = new SlashCommandBuilder()
           .setDescription('Type RESET to confirm')
           .setRequired(true)
       )
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('ban')
+      .setDescription('Ban a user from the confession system')
+      .addUserOption(option =>
+        option.setName('user').setDescription('User to ban').setRequired(true)
+      )
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('unban')
+      .setDescription('Unban a user from the confession system')
+      .addUserOption(option =>
+        option.setName('user').setDescription('User to unban').setRequired(true)
+      )
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('banlist')
+      .setDescription('Show all banned users')
   );
 
 const rest = new REST().setToken(process.env.BOT_TOKEN);

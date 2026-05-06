@@ -36,6 +36,7 @@ import {
   resetConsents,
   getAllConsents,
 } from './consents.js';
+import { isBanned, addBan, removeBan, getAllBans } from './bans.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID              = process.env.ADMIN_ID;
@@ -120,6 +121,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   // ─── Accept contract button ─────────────────────────────────────────────────
   if (interaction.isButton() && interaction.customId === 'accept_contract') {
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, ephemeral: true });
+    }
     if (hasConsented(interaction.user.id)) {
       return interaction.reply({ content: lang.joinAlready, ephemeral: true });
     }
@@ -157,6 +161,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const match = interaction.customId.match(/^vote_(yes|no)_(\d+)$/);
     if (!match) return;
 
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, ephemeral: true });
+    }
+
     if (!hasConsented(interaction.user.id)) {
       return interaction.reply({ content: lang.joinNotConsented, ephemeral: true });
     }
@@ -185,6 +193,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.commandName === 'confession') {
     if (interaction.inGuild()) {
       return interaction.reply({ content: lang.dmOnly, ephemeral: true });
+    }
+
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, ephemeral: true });
     }
 
     if (!hasConsented(interaction.user.id)) {
@@ -285,6 +297,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   // ─── /join ─────────────────────────────────────────────────────────────────
   if (interaction.commandName === 'join') {
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, ephemeral: true });
+    }
+
     if (hasConsented(interaction.user.id)) {
       return interaction.reply({ content: lang.joinAlready, ephemeral: true });
     }
@@ -429,6 +445,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
       resetConsents();
 
       return interaction.editReply({ content: lang.resetAllSuccess(deleted) });
+    }
+
+    if (sub === 'ban') {
+      const target = interaction.options.getUser('user');
+      const ok = addBan(target.id);
+      if (!ok) return interaction.reply({ content: lang.banAlready(target.username), ephemeral: true });
+      return interaction.reply({ content: lang.banSuccess(target.username), ephemeral: true });
+    }
+
+    if (sub === 'unban') {
+      const target = interaction.options.getUser('user');
+      const ok = removeBan(target.id);
+      if (!ok) return interaction.reply({ content: lang.banNotFound(target.username), ephemeral: true });
+      return interaction.reply({ content: lang.unbanSuccess(target.username), ephemeral: true });
+    }
+
+    if (sub === 'banlist') {
+      const ids = getAllBans();
+      if (ids.length === 0) {
+        return interaction.reply({ content: lang.banlistEmpty, ephemeral: true });
+      }
+      const embed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setTitle(lang.banlistTitle)
+        .setDescription(ids.map(id => `<@${id}>`).join('\n'))
+        .setFooter({ text: `${ids.length} membre(s)` })
+        .setTimestamp();
+      return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
     if (sub === 'stats') {
