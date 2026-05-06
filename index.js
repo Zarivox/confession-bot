@@ -8,6 +8,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
+  PermissionFlagsBits,
   Events,
 } from 'discord.js';
 import 'dotenv/config';
@@ -58,6 +59,77 @@ const CONFESSION_CHANNEL_ID  = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID               = process.env.ADMIN_ID;
 const GUILD_ID               = process.env.GUILD_ID;
 const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
+const ALLOW_CHANNEL_MESSAGES = process.env.ALLOW_CHANNEL_MESSAGES === 'true';
+
+// ─── Role helpers ─────────────────────────────────────────────────────────────
+
+async function assignParticipantRole(userId) {
+  if (!PARTICIPANT_ROLE_ID) return;
+  try {
+    const guild  = await client.guilds.fetch(GUILD_ID);
+    const member = await guild.members.fetch(userId);
+    await member.roles.add(PARTICIPANT_ROLE_ID);
+  } catch (e) {
+    console.error(`[role] Impossible d'assigner le rôle à ${userId} :`, e.message);
+  }
+}
+
+async function removeParticipantRole(userId) {
+  if (!PARTICIPANT_ROLE_ID) return;
+  try {
+    const guild  = await client.guilds.fetch(GUILD_ID);
+    const member = await guild.members.fetch(userId);
+    await member.roles.remove(PARTICIPANT_ROLE_ID);
+  } catch {
+    // L'utilisateur a peut-être quitté le serveur — pas bloquant
+  }
+}
+
+// ─── Channel permission checker / auto-fix ────────────────────────────────────
+
+async function ensureChannelPermissions(channel, guild) {
+  const fixes = [];
+
+  // @everyone : toujours cacher le channel + bloquer les messages si configuré
+  const everyoneRole      = guild.roles.everyone;
+  const everyoneOverwrite = channel.permissionOverwrites.cache.get(everyoneRole.id);
+  const everyoneDeniesView     = everyoneOverwrite?.deny.has(PermissionFlagsBits.ViewChannel) === true;
+  const everyoneDeniesMessages = everyoneOverwrite?.deny.has(PermissionFlagsBits.SendMessages) === true;
+
+  const needEveryoneFix = !everyoneDeniesView || (!ALLOW_CHANNEL_MESSAGES && !everyoneDeniesMessages);
+  if (needEveryoneFix) {
+    await channel.permissionOverwrites.edit(everyoneRole, {
+      ViewChannel:  false,
+      SendMessages: ALLOW_CHANNEL_MESSAGES ? null : false,
+    });
+    const denied = ['ViewChannel'];
+    if (!ALLOW_CHANNEL_MESSAGES) denied.push('SendMessages');
+    fixes.push(`@everyone → ${denied.join(' + ')} refusés`);
+  }
+
+  // Rôle participant : autoriser ViewChannel + bloquer SendMessages si configuré
+  if (PARTICIPANT_ROLE_ID) {
+    const participantRole = await guild.roles.fetch(PARTICIPANT_ROLE_ID);
+    if (participantRole) {
+      const roleOverwrite   = channel.permissionOverwrites.cache.get(participantRole.id);
+      const roleAllowsView  = roleOverwrite?.allow.has(PermissionFlagsBits.ViewChannel) === true;
+      const roleDeniesMsg   = roleOverwrite?.deny.has(PermissionFlagsBits.SendMessages) === true;
+
+      const needRoleFix = !roleAllowsView || (!ALLOW_CHANNEL_MESSAGES && !roleDeniesMsg);
+      if (needRoleFix) {
+        await channel.permissionOverwrites.edit(participantRole, {
+          ViewChannel:  true,
+          SendMessages: ALLOW_CHANNEL_MESSAGES ? null : false,
+        });
+        const what = ['ViewChannel accordé'];
+        if (!ALLOW_CHANNEL_MESSAGES) what.push('SendMessages refusé');
+        fixes.push(`@${participantRole.name} → ${what.join(' + ')}`);
+      }
+    }
+  }
+
+  return fixes;
+}
 
 // ─── Playerlist pagination sessions ──────────────────────────────────────────
 const PLAYERLIST_PAGE_SIZE = 15;
@@ -162,11 +234,32 @@ client.once(Events.ClientReady, async (c) => {
     process.exit(1);
   }
 
+  const confessionChannel = await c.channels.fetch(CONFESSION_CHANNEL_ID);
+  const adminUser         = await c.users.fetch(ADMIN_ID);
+
   console.log(`✅ Connecté en tant que ${c.user.tag}`);
   console.log(`✅ Serveur : ${guild.name}`);
-  console.log(`✅ Salon des confessions : #${(await c.channels.fetch(CONFESSION_CHANNEL_ID)).name}`);
-  console.log(`✅ Admin : ${(await c.users.fetch(ADMIN_ID)).tag}`);
-  if (PARTICIPANT_ROLE_ID) console.log(`✅ Rôle participant : ${(await guild.roles.fetch(PARTICIPANT_ROLE_ID)).name}`);
+  console.log(`✅ Salon des confessions : #${confessionChannel.name}`);
+  console.log(`✅ Admin : ${adminUser.tag}`);
+  if (PARTICIPANT_ROLE_ID) {
+    const role = await guild.roles.fetch(PARTICIPANT_ROLE_ID);
+    console.log(`✅ Rôle participant : @${role.name}`);
+  }
+
+  // Vérification et correction automatique des permissions du salon
+  try {
+    const fixes = await ensureChannelPermissions(confessionChannel, guild);
+    if (fixes.length > 0) {
+      console.log(`\n🔧 Permissions du salon corrigées automatiquement :`);
+      fixes.forEach(f => console.log(`  • ${f}`));
+    } else {
+      console.log(`✅ Permissions du salon : OK`);
+    }
+  } catch (e) {
+    console.error(`⚠️  Impossible de vérifier/corriger les permissions du salon : ${e.message}`);
+    console.error(`   Vérifie que le bot a la permission "Gérer le salon" dans #${confessionChannel.name}`);
+  }
+
   console.log('\n🟢 Bot prêt.\n');
 });
 
@@ -196,6 +289,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.joinAlready, flags: MessageFlags.Ephemeral });
     }
     addConsent(interaction.user.id);
+    await assignParticipantRole(interaction.user.id);
     const confirmedEmbed = new EmbedBuilder()
       .setColor(0x57F287)
       .setTitle(lang.joinSuccessTitle)
@@ -546,6 +640,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const ok = addBan(userId);
       if (!ok) return interaction.reply({ content: lang.banAlready(username), flags: MessageFlags.Ephemeral });
       removeConsent(userId);
+      await removeParticipantRole(userId);
 
       if (!deletePublic) {
         return interaction.reply({ content: lang.banSuccess(username), flags: MessageFlags.Ephemeral });
