@@ -124,6 +124,9 @@ const adminCommand = new SlashCommandBuilder()
       .addStringOption(option =>
         option.setName('id').setDescription('User ID to ban (if they left the server)').setRequired(false)
       )
+      .addBooleanOption(option =>
+        option.setName('delete_public').setDescription('Also delete all public confessions from this user').setRequired(false)
+      )
   )
   .addSubcommand(sub =>
     sub

@@ -470,17 +470,47 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (sub === 'ban') {
-      const target = interaction.options.getUser('user');
-      const rawId  = interaction.options.getString('id');
+      const target       = interaction.options.getUser('user');
+      const rawId        = interaction.options.getString('id');
+      const deletePublic = interaction.options.getBoolean('delete_public') ?? false;
+
       if (!target && !rawId) {
         return interaction.reply({ content: lang.banNoTarget, ephemeral: true });
       }
+
       const userId   = target?.id ?? rawId;
       const username = target?.username ?? rawId;
+
       const ok = addBan(userId);
       if (!ok) return interaction.reply({ content: lang.banAlready(username), ephemeral: true });
       removeConsent(userId);
-      return interaction.reply({ content: lang.banSuccess(username), ephemeral: true });
+
+      if (!deletePublic) {
+        return interaction.reply({ content: lang.banSuccess(username), ephemeral: true });
+      }
+
+      // Delete all public confessions from this user
+      await interaction.deferReply({ ephemeral: true });
+
+      const toDelete = getAll().filter(c => c.authorId === userId && !c.anonymous);
+      let deleted = 0;
+
+      for (const confession of toDelete) {
+        deleteConfession(confession.number);
+        try {
+          const ch  = await client.channels.fetch(confession.channelId);
+          const msg = await ch.messages.fetch(confession.messageId);
+          const deletedEmbed = new EmbedBuilder()
+            .setColor(0x808080)
+            .setTitle(`🗑️ Confession #${confession.number}`)
+            .setDescription(lang.deletedEmbedDesc)
+            .setTimestamp();
+          await msg.edit({ embeds: [deletedEmbed], components: [] });
+          deleted++;
+        } catch { /* message unreachable or already gone */ }
+      }
+
+      return interaction.editReply({ content: lang.banSuccessDeleted(username, deleted) });
     }
 
     if (sub === 'unban') {
