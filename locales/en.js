@@ -14,6 +14,7 @@ export default {
   // Embed
   embedTitle:      '💬 Anonymous Confession',
   embedFooter:     'Anonymous',
+  postedBy:        'Posted by',
 
   // /top
   topTitle:    'Top Confessions',

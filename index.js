@@ -160,15 +160,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ? `${lang.embedTitle} #${nextNumber}`
       : `💬 Confession #${nextNumber}`;
 
-    const footer = anonymous
-      ? { text: lang.embedFooter }
-      : { text: interaction.user.username, iconURL: interaction.user.displayAvatarURL({ size: 64 }) };
-
     const embed = new EmbedBuilder()
       .setColor(anonymous ? 0xE8C547 : 0x5865F2)
       .setTitle(titleText)
-      .setFooter(footer)
       .setTimestamp();
+
+    if (anonymous) {
+      embed.setFooter({ text: lang.embedFooter });
+    } else {
+      embed.setFooter({ text: lang.embedFooter, iconURL: interaction.user.displayAvatarURL({ size: 64 }) });
+      embed.addFields({ name: lang.postedBy, value: `<@${interaction.user.id}>`, inline: true });
+    }
 
     if (message) embed.setDescription(message);
     if (image)   embed.setImage(image.url);
