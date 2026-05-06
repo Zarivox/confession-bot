@@ -57,6 +57,7 @@ export default {
   playerlistTitle:   '📋 Members who signed the contract',
   playerlistEmpty:   '❌ No members have signed the contract yet.',
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
+  playerlistExpired: '❌ List expired, run `/playerlist` again.',
 
   // Internal helper
   authorResult:    (n, tag, id) => `🔍 Confession **#${n}** was posted by **${tag}** (<@${id}>)`,

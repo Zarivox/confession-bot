@@ -57,6 +57,7 @@ export default {
   playerlistTitle:   '📋 Membres ayant signé le contrat',
   playerlistEmpty:   '❌ Aucun membre n\'a encore signé le contrat.',
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
+  playerlistExpired: '❌ Liste expirée, refais `/playerlist`.',
 
   // Helper interne
   authorResult:    (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
