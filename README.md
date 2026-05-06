@@ -110,6 +110,7 @@ On startup, the bot will:
 | `/admin unban user:@... \| id:...` | Unban a user (they must `/join` again) |
 | `/admin banlist` | Show all banned users |
 | `/admin clearban confirm:CLEARBAN` | Wipe the entire ban list |
+| `/admin info user:@... \| id:...` | Full status of a user (banned, consented, role, cooldowns, post count) |
 | `/playerlist` | Show all members who signed the contract (paginated) |
 
 > Bans persist through `/admin wipe`. Use `/admin clearban` to wipe the ban list.

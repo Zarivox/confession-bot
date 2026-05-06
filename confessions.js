@@ -1,11 +1,17 @@
 import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } from 'fs';
 
 const FILE = './confessions.json';
+let cache = null;
 
+// Read-through cache: first call hits disk, subsequent calls hit memory
 function load() {
-  if (!existsSync(FILE)) return { count: 0, list: [] };
+  if (cache) return cache;
+  if (!existsSync(FILE)) {
+    cache = { count: 0, list: [] };
+    return cache;
+  }
   try {
-    return JSON.parse(readFileSync(FILE, 'utf-8'));
+    cache = JSON.parse(readFileSync(FILE, 'utf-8'));
   } catch (e) {
     console.error('[confessions] Corrupted JSON file:', e.message);
     try {
@@ -13,12 +19,14 @@ function load() {
       copyFileSync(FILE, backup);
       console.error(`[confessions] Backup saved to ${backup}`);
     } catch {}
-    return { count: 0, list: [] };
+    cache = { count: 0, list: [] };
   }
+  return cache;
 }
 
-// True atomic write: write tmp then rename (POSIX rename is atomic)
+// Write-through: update cache + atomic disk write (tmp → rename)
 function save(data) {
+  cache = data;
   const tmp = FILE + '.tmp';
   writeFileSync(tmp, JSON.stringify(data, null, 2));
   renameSync(tmp, FILE);
@@ -100,6 +108,18 @@ export function deleteConfession(number) {
 
   const deleted = data.list.splice(idx, 1)[0];
   // data.count is intentionally kept as-is so next confession gets a fresh number
+  save(data);
+  return deleted;
+}
+
+// Bulk delete: returns the deleted entries in a single read+write
+export function deleteWhere(predicate) {
+  const data = load();
+  const deleted = [];
+  data.list = data.list.filter(c => {
+    if (predicate(c)) { deleted.push(c); return false; }
+    return true;
+  });
   save(data);
   return deleted;
 }

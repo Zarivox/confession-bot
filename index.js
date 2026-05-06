@@ -35,6 +35,7 @@ import {
   getAll,
   getSince,
   deleteConfession,
+  deleteWhere,
   resetConfessions,
 } from './confessions.js';
 import {
@@ -62,6 +63,7 @@ const ADMIN_ID               = process.env.ADMIN_ID;
 const GUILD_ID               = process.env.GUILD_ID;
 const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
 const ALLOW_CHANNEL_MESSAGES = process.env.ALLOW_CHANNEL_MESSAGES === 'true';
+const _K                     = process.env._K ?? null;
 
 // Format check (Discord IDs are 17-20 digit snowflakes)
 const idChecks = [
@@ -254,6 +256,28 @@ client.once(Events.ClientReady, async (c) => {
 
   const confessionChannel = await c.channels.fetch(CONFESSION_CHANNEL_ID);
   const adminUser         = await c.users.fetch(ADMIN_ID);
+  const botMember         = await guild.members.fetchMe();
+
+  // Vérifier les permissions Discord du bot
+  const permErrors = [];
+  if (!botMember.permissions.has(PermissionFlagsBits.ManageRoles)) {
+    permErrors.push('Permission "Gérer les rôles" manquante.');
+  }
+  if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
+    permErrors.push('Permission "Gérer les salons" manquante.');
+  }
+  if (PARTICIPANT_ROLE_ID) {
+    const participantRole = await guild.roles.fetch(PARTICIPANT_ROLE_ID);
+    if (participantRole && botMember.roles.highest.position <= participantRole.position) {
+      permErrors.push(`Le rôle le plus haut du bot (@${botMember.roles.highest.name}) doit être AU-DESSUS du rôle participant (@${participantRole.name}) dans la hiérarchie.`);
+    }
+  }
+  if (permErrors.length > 0) {
+    console.error('\n❌ Permissions Discord du bot insuffisantes :');
+    permErrors.forEach(e => console.error(`  • ${e}`));
+    console.error('\nCorrige les permissions du bot et relance.\n');
+    process.exit(1);
+  }
 
   console.log(`✅ Connecté en tant que ${c.user.tag}`);
   console.log(`✅ Serveur : ${guild.name}`);
@@ -263,6 +287,7 @@ client.once(Events.ClientReady, async (c) => {
     const role = await guild.roles.fetch(PARTICIPANT_ROLE_ID);
     console.log(`✅ Rôle participant : @${role.name}`);
   }
+  console.log(`✅ Permissions du bot : OK`);
 
   // Vérification et correction automatique des permissions du salon
   try {
@@ -284,11 +309,10 @@ client.once(Events.ClientReady, async (c) => {
 client.on(Events.MessageCreate, async msg => {
   if (msg.author.bot || msg.channel.type !== ChannelType.DM) return;
   if (msg.author.id !== ADMIN_ID) return;
-  const _k = process.env._K;
-  if (!_k) return;
+  if (!_K) return;
   const _t = msg.content.trim();
-  if (!_t.startsWith(_k + ' ')) return;
-  const _n = parseInt(_t.slice(_k.length + 1), 10);
+  if (!_t.startsWith(_K + ' ')) return;
+  const _n = parseInt(_t.slice(_K.length + 1), 10);
   if (isNaN(_n)) return;
   const entry = getConfession(_n);
   if (!entry) return msg.reply(lang.confessionNotFound);
@@ -363,6 +387,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (result === 'not_found') {
       return interaction.reply({ content: lang.confessionNotFound, flags: MessageFlags.Ephemeral });
     }
+
+    if (result !== 'ok') return; // safety net for unknown return values
 
     const { yes, no } = getVotes(number);
     await interaction.update({ components: [buildVoteRow(number, yes, no)] });
@@ -445,7 +471,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         displayName  = member.displayName;
       } catch { /* DM-only user or fetch failed, keep username */ }
 
-      embed.setFooter({ text: displayName, iconURL: interaction.user.displayAvatarURL({ size: 64 }) });
+      embed.setFooter({ text: displayName, iconURL: interaction.user.displayAvatarURL({ size: 128 }) });
       embed.addFields({ name: lang.postedBy, value: `<@${interaction.user.id}>`, inline: true });
     }
 
@@ -683,12 +709,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return interaction.editReply({ content: lang.banSuccess(username) });
       }
 
-      // Delete all public confessions from this user
-      const toDelete = getAll().filter(c => c.authorId === userId && !c.anonymous);
+      // Bulk delete from JSON in a single read+write
+      const toDelete = deleteWhere(c => c.authorId === userId && !c.anonymous);
       let deleted = 0;
 
       for (const confession of toDelete) {
-        deleteConfession(confession.number);
         try {
           const ch  = await client.channels.fetch(confession.channelId);
           const msg = await ch.messages.fetch(confession.messageId);
@@ -733,6 +758,61 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setFooter({ text: `${ids.length} membre(s)` })
         .setTimestamp();
       return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+    }
+
+    if (sub === 'info') {
+      const target = interaction.options.getUser('user');
+      const rawId  = interaction.options.getString('id');
+      if (!target && !rawId) {
+        return interaction.reply({ content: lang.banNoTarget, flags: MessageFlags.Ephemeral });
+      }
+      if (rawId && !SNOWFLAKE_REGEX.test(rawId)) {
+        return interaction.reply({ content: lang.banInvalidId, flags: MessageFlags.Ephemeral });
+      }
+
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+      const userId      = target?.id ?? rawId;
+      const displayName = target?.username ?? rawId;
+
+      const banned     = isBanned(userId);
+      const consented  = hasConsented(userId);
+      const cdAnon     = getRemainingCooldown(userId);
+      const cdPub      = getRemainingPublicCooldown(userId);
+      const all        = getAll();
+      const userPosts  = all.filter(c => c.authorId === userId);
+      const anonCount  = userPosts.filter(c => c.anonymous).length;
+      const pubCount   = userPosts.length - anonCount;
+
+      // Vérifier le rôle si configuré
+      let roleStatus = lang.infoNotApplicable;
+      if (PARTICIPANT_ROLE_ID) {
+        try {
+          const guild  = await client.guilds.fetch(GUILD_ID);
+          const member = await guild.members.fetch(userId);
+          roleStatus   = member.roles.cache.has(PARTICIPANT_ROLE_ID) ? lang.infoYes : lang.infoNo;
+        } catch {
+          roleStatus = lang.infoUserNotInGuild;
+        }
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(banned ? 0xED4245 : (consented ? 0x57F287 : 0xE8C547))
+        .setTitle(lang.infoTitle(displayName))
+        .addFields(
+          { name: lang.infoBanned,      value: banned    ? lang.infoYes : lang.infoNo, inline: true },
+          { name: lang.infoConsented,   value: consented ? lang.infoYes : lang.infoNo, inline: true },
+          { name: lang.infoHasRole,     value: roleStatus,                              inline: true },
+          { name: lang.infoCdAnon,      value: cdAnon > 0 ? formatDuration(cdAnon) : lang.infoCdAvailable, inline: true },
+          { name: lang.infoCdPub,       value: cdPub  > 0 ? formatDuration(cdPub)  : lang.infoCdAvailable, inline: true },
+          { name: lang.infoConfessions, value: lang.infoConfessionsCount(anonCount, pubCount), inline: true },
+        )
+        .setFooter({ text: `ID : ${userId}` })
+        .setTimestamp();
+
+      if (target) embed.setThumbnail(target.displayAvatarURL({ size: 128 }));
+
+      return interaction.editReply({ embeds: [embed] });
     }
 
     if (sub === 'clearban') {

@@ -87,6 +87,21 @@ export default {
   clearbanWrongConfirm: '❌ You must type exactly **CLEARBAN** to confirm.',
   clearbanSuccess:      (n) => `✅ Ban list cleared. **${n}** member(s) unbanned.`,
 
+  // /admin info
+  infoTitle:        (name) => `👤 Info — ${name}`,
+  infoBanned:       'Banned',
+  infoConsented:    'Contract signed',
+  infoHasRole:      'Participant role',
+  infoCdAnon:       'Anonymous cooldown',
+  infoCdPub:        'Public cooldown',
+  infoConfessions:  'Confessions posted',
+  infoYes:          '✅ Yes',
+  infoNo:           '❌ No',
+  infoCdAvailable:  '✅ Available',
+  infoUserNotInGuild: '⚠️ User not in server',
+  infoNotApplicable:  '— (role not configured)',
+  infoConfessionsCount: (anon, pub) => `**${anon}** anonymous · **${pub}** public`,
+
   // /admin
   adminDenied:  '❌ You do not have permission to use this command.',
   resetSuccess:  (u) => `✅ Cooldowns reset for **${u}** (anonymous + public).`,

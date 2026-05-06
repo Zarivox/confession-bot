@@ -1,11 +1,16 @@
 import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } from 'fs';
 
 const FILE = './bans.json';
+let cache = null;
 
 function load() {
-  if (!existsSync(FILE)) return { list: [] };
+  if (cache) return cache;
+  if (!existsSync(FILE)) {
+    cache = { list: [] };
+    return cache;
+  }
   try {
-    return JSON.parse(readFileSync(FILE, 'utf-8'));
+    cache = JSON.parse(readFileSync(FILE, 'utf-8'));
   } catch (e) {
     console.error('[bans] Corrupted JSON:', e.message);
     try {
@@ -13,11 +18,13 @@ function load() {
       copyFileSync(FILE, backup);
       console.error(`[bans] Backup saved to ${backup}`);
     } catch {}
-    return { list: [] };
+    cache = { list: [] };
   }
+  return cache;
 }
 
 function save(data) {
+  cache = data;
   const tmp = FILE + '.tmp';
   writeFileSync(tmp, JSON.stringify(data, null, 2));
   renameSync(tmp, FILE);

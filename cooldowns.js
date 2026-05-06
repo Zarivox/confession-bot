@@ -2,15 +2,20 @@ import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } fro
 
 const FILE = './cooldowns.json';
 const DEFAULT = { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
+let cache = null;
 
 function load() {
-  if (!existsSync(FILE)) return { ...DEFAULT };
+  if (cache) return cache;
+  if (!existsSync(FILE)) {
+    cache = { ...DEFAULT };
+    return cache;
+  }
   try {
     const data = JSON.parse(readFileSync(FILE, 'utf-8'));
     // Migration: add missing fields if upgrading from older version
     if (data.delayPublicMs === undefined) data.delayPublicMs = 0;
     if (!data.usersPublic) data.usersPublic = {};
-    return data;
+    cache = data;
   } catch (e) {
     console.error('[cooldowns] Corrupted JSON:', e.message);
     try {
@@ -18,11 +23,13 @@ function load() {
       copyFileSync(FILE, backup);
       console.error(`[cooldowns] Backup saved to ${backup}`);
     } catch {}
-    return { ...DEFAULT };
+    cache = { ...DEFAULT };
   }
+  return cache;
 }
 
 function save(data) {
+  cache = data;
   const tmp = FILE + '.tmp';
   writeFileSync(tmp, JSON.stringify(data, null, 2));
   renameSync(tmp, FILE);
