@@ -28,6 +28,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   const message = interaction.options.getString('message');
+  const image = interaction.options.getAttachment('image');
 
   // Fetch the confession channel
   let confessionChannel;
@@ -53,6 +54,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     .setDescription(message)
     .setFooter({ text: 'Anonymous' })
     .setTimestamp();
+
+  // Validate and attach the image if provided
+  if (image) {
+    if (!image.contentType?.startsWith('image/')) {
+      return interaction.reply({
+        content: '❌ The attached file is not a valid image.',
+        ephemeral: true,
+      });
+    }
+    embed.setImage(image.url);
+  }
 
   // Post the confession and add voting reactions
   try {

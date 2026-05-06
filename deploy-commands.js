@@ -13,6 +13,12 @@ const commands = [
         .setRequired(true)
         .setMaxLength(2000)
     )
+    .addAttachmentOption(option =>
+      option
+        .setName('image')
+        .setDescription('Optional image to attach to your confession')
+        .setRequired(false)
+    )
 ].map(cmd => cmd.toJSON());
 
 const rest = new REST().setToken(process.env.BOT_TOKEN);
