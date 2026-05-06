@@ -44,9 +44,19 @@ import {
 } from './consents.js';
 import { isBanned, addBan, removeBan, getAllBans, resetBans } from './bans.js';
 
-const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
-const ADMIN_ID              = process.env.ADMIN_ID;
-const GUILD_ID              = process.env.GUILD_ID;
+// ─── Validation des variables d'environnement ─────────────────────────────────
+const REQUIRED_ENV = ['BOT_TOKEN', 'CLIENT_ID', 'GUILD_ID', 'CONFESSION_CHANNEL_ID', 'ADMIN_ID'];
+const missingEnv = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missingEnv.length > 0) {
+  console.error(`\n❌ Variables d'environnement manquantes : ${missingEnv.join(', ')}`);
+  console.error('Corrige le .env et relance le bot.\n');
+  process.exit(1);
+}
+
+const CONFESSION_CHANNEL_ID  = process.env.CONFESSION_CHANNEL_ID;
+const ADMIN_ID               = process.env.ADMIN_ID;
+const GUILD_ID               = process.env.GUILD_ID;
+const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
 
 // ─── Playerlist pagination sessions ──────────────────────────────────────────
 const PLAYERLIST_PAGE_SIZE = 15;
@@ -103,9 +113,60 @@ function buildVoteRow(number, yesCount, noCount) {
   );
 }
 
-client.once(Events.ClientReady, (c) => {
-  console.log(`Connecté en tant que ${c.user.tag}`);
-  console.log(`Salon des confessions : ${CONFESSION_CHANNEL_ID}`);
+client.once(Events.ClientReady, async (c) => {
+  console.log(`\n🔍 Vérification de la configuration...`);
+  const errors = [];
+
+  // Vérifier GUILD_ID
+  let guild = null;
+  try {
+    guild = await c.guilds.fetch(GUILD_ID);
+  } catch {
+    errors.push(`GUILD_ID "${GUILD_ID}" — serveur introuvable ou bot non présent.`);
+  }
+
+  // Vérifier CONFESSION_CHANNEL_ID
+  try {
+    const ch = await c.channels.fetch(CONFESSION_CHANNEL_ID);
+    if (!ch?.isTextBased()) errors.push(`CONFESSION_CHANNEL_ID "${CONFESSION_CHANNEL_ID}" — n'est pas un salon textuel.`);
+  } catch {
+    errors.push(`CONFESSION_CHANNEL_ID "${CONFESSION_CHANNEL_ID}" — salon introuvable.`);
+  }
+
+  // Vérifier ADMIN_ID
+  try {
+    await c.users.fetch(ADMIN_ID);
+  } catch {
+    errors.push(`ADMIN_ID "${ADMIN_ID}" — utilisateur introuvable.`);
+  }
+
+  // Vérifier PARTICIPANT_ROLE_ID (optionnel — seulement si défini)
+  if (PARTICIPANT_ROLE_ID) {
+    if (!guild) {
+      errors.push(`PARTICIPANT_ROLE_ID — impossible à vérifier car le serveur est introuvable.`);
+    } else {
+      try {
+        const role = await guild.roles.fetch(PARTICIPANT_ROLE_ID);
+        if (!role) errors.push(`PARTICIPANT_ROLE_ID "${PARTICIPANT_ROLE_ID}" — rôle introuvable sur le serveur.`);
+      } catch {
+        errors.push(`PARTICIPANT_ROLE_ID "${PARTICIPANT_ROLE_ID}" — rôle introuvable sur le serveur.`);
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    console.error('\n❌ Erreurs de configuration :');
+    errors.forEach(e => console.error(`  • ${e}`));
+    console.error('\nLe bot s\'arrête. Corrige le .env et relance.\n');
+    process.exit(1);
+  }
+
+  console.log(`✅ Connecté en tant que ${c.user.tag}`);
+  console.log(`✅ Serveur : ${guild.name}`);
+  console.log(`✅ Salon des confessions : #${(await c.channels.fetch(CONFESSION_CHANNEL_ID)).name}`);
+  console.log(`✅ Admin : ${(await c.users.fetch(ADMIN_ID)).tag}`);
+  if (PARTICIPANT_ROLE_ID) console.log(`✅ Rôle participant : ${(await guild.roles.fetch(PARTICIPANT_ROLE_ID)).name}`);
+  console.log('\n🟢 Bot prêt.\n');
 });
 
 client.on(Events.MessageCreate, async msg => {
@@ -592,4 +653,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-client.login(process.env.BOT_TOKEN);
+client.login(process.env.BOT_TOKEN).catch(err => {
+  console.error(`\n❌ BOT_TOKEN invalide ou connexion impossible : ${err.message}`);
+  console.error('Corrige le .env et relance le bot.\n');
+  process.exit(1);
+});
