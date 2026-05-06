@@ -41,6 +41,38 @@ const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID              = process.env.ADMIN_ID;
 const GUILD_ID              = process.env.GUILD_ID;
 
+// ─── Playerlist pagination sessions ──────────────────────────────────────────
+const PLAYERLIST_PAGE_SIZE = 15;
+const PLAYERLIST_TTL       = 5 * 60 * 1000; // 5 minutes
+const playerlistSessions   = new Map();
+// { sessionId → { ids, page, timeoutHandle } }
+
+function buildPlayerlistEmbed(ids, page) {
+  const totalPages = Math.ceil(ids.length / PLAYERLIST_PAGE_SIZE);
+  const slice = ids.slice(page * PLAYERLIST_PAGE_SIZE, (page + 1) * PLAYERLIST_PAGE_SIZE);
+  return new EmbedBuilder()
+    .setColor(0xE8C547)
+    .setTitle(`${lang.playerlistTitle} (${ids.length})`)
+    .setDescription(slice.map(id => `<@${id}>`).join('\n'))
+    .setFooter({ text: lang.playerlistPage(page + 1, totalPages) })
+    .setTimestamp();
+}
+
+function buildPlayerlistRow(sessionId, page, totalPages) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`pl_p_${sessionId}`)
+      .setLabel('◀')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0),
+    new ButtonBuilder()
+      .setCustomId(`pl_n_${sessionId}`)
+      .setLabel('▶')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1),
+  );
+}
+
 const lang = (await import(`./locales/${process.env.LANG === 'fr' ? 'fr' : 'en'}.js`)).default;
 
 const client = new Client({
@@ -109,6 +141,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setDescription(lang.joinSuccess)
       .setTimestamp();
     return interaction.update({ embeds: [confirmedEmbed], components: [] });
+  }
+
+  // ─── Playerlist pagination buttons ─────────────────────────────────────────
+  if (interaction.isButton() && /^pl_[pn]_/.test(interaction.customId)) {
+    const [, dir, sessionId] = interaction.customId.split('_');
+    const session = playerlistSessions.get(sessionId);
+
+    if (!session) {
+      return interaction.reply({ content: lang.playerlistExpired, ephemeral: true });
+    }
+
+    const totalPages = Math.ceil(session.ids.length / PLAYERLIST_PAGE_SIZE);
+    if (dir === 'p') session.page = Math.max(0, session.page - 1);
+    else             session.page = Math.min(totalPages - 1, session.page + 1);
+
+    return interaction.update({
+      embeds:     [buildPlayerlistEmbed(session.ids, session.page)],
+      components: totalPages > 1 ? [buildPlayerlistRow(sessionId, session.page, totalPages)] : [],
+    });
   }
 
   // ─── Vote buttons ───────────────────────────────────────────────────────────
@@ -273,19 +324,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.editReply(lang.playerlistEmpty);
     }
 
-    // Discord embed description limit: 4096 chars — cap at 150 mentions to be safe
-    const shown    = ids.slice(0, 150);
-    const overflow = ids.length - shown.length;
-    let description = shown.map(id => `<@${id}>`).join('\n');
-    if (overflow > 0) description += `\n*… et ${overflow} autres*`;
+    const totalPages = Math.ceil(ids.length / PLAYERLIST_PAGE_SIZE);
 
-    const embed = new EmbedBuilder()
-      .setColor(0xE8C547)
-      .setTitle(`${lang.playerlistTitle} (${ids.length})`)
-      .setDescription(description)
-      .setTimestamp();
+    if (totalPages <= 1) {
+      // No pagination needed
+      return interaction.editReply({ embeds: [buildPlayerlistEmbed(ids, 0)] });
+    }
 
-    return interaction.editReply({ embeds: [embed] });
+    // Create a session for pagination
+    const sessionId = Date.now().toString(36);
+    const timeoutHandle = setTimeout(() => {
+      playerlistSessions.delete(sessionId);
+    }, PLAYERLIST_TTL);
+
+    playerlistSessions.set(sessionId, { ids, page: 0, timeoutHandle });
+
+    return interaction.editReply({
+      embeds:     [buildPlayerlistEmbed(ids, 0)],
+      components: [buildPlayerlistRow(sessionId, 0, totalPages)],
+    });
   }
 
   // ─── /top ──────────────────────────────────────────────────────────────────

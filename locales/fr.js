@@ -54,8 +54,10 @@ export default {
   joinNotConsented:  '❌ Tu dois d\'abord signer le contrat avec `/join` pour poster une confession.',
 
   // /playerlist
-  playerlistTitle:  '📋 Membres ayant signé le contrat',
-  playerlistEmpty:  '❌ Aucun membre n\'a encore signé le contrat.',
+  playerlistTitle:   '📋 Membres ayant signé le contrat',
+  playerlistEmpty:   '❌ Aucun membre n\'a encore signé le contrat.',
+  playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
+  playerlistExpired: '❌ Cette liste a expiré. Relance `/playerlist` pour en obtenir une nouvelle.',
 
   // Helper interne
   authorResult:    (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
