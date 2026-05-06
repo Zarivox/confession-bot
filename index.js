@@ -7,6 +7,9 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
   MessageFlags,
   PermissionFlagsBits,
   Events,
@@ -64,6 +67,10 @@ const GUILD_ID               = process.env.GUILD_ID;
 const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
 const ALLOW_CHANNEL_MESSAGES = process.env.ALLOW_CHANNEL_MESSAGES === 'true';
 const _K                     = process.env._K ?? null;
+// CONTRACT_MESSAGE : si absent ou 'default', utilise le texte de la locale ; sinon texte custom
+const CONTRACT_MESSAGE       = (process.env.CONTRACT_MESSAGE && process.env.CONTRACT_MESSAGE !== 'default')
+  ? process.env.CONTRACT_MESSAGE
+  : null;
 
 // Format check (Discord IDs are 17-20 digit snowflakes)
 const idChecks = [
@@ -322,16 +329,46 @@ client.on(Events.MessageCreate, async msg => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // ─── Accept contract button ─────────────────────────────────────────────────
-  if (interaction.isButton() && interaction.customId === 'accept_contract') {
+  // ─── Open contract modal button ─────────────────────────────────────────────
+  if (interaction.isButton() && interaction.customId === 'open_contract_modal') {
     if (isBanned(interaction.user.id)) {
       return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
     }
     if (hasConsented(interaction.user.id)) {
       return interaction.reply({ content: lang.joinAlready, flags: MessageFlags.Ephemeral });
     }
-    // Defer the update first to avoid 3s timeout on role assignment API calls
-    await interaction.deferUpdate();
+    const modal = new ModalBuilder()
+      .setCustomId('contract_modal')
+      .setTitle(lang.joinModalTitle)
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('consent_phrase')
+            .setLabel(lang.joinModalLabel)
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+            .setPlaceholder(lang.joinAcceptPhrase)
+            .setMinLength(lang.joinAcceptPhrase.length)
+            .setMaxLength(lang.joinAcceptPhrase.length + 5),
+        ),
+      );
+    return interaction.showModal(modal);
+  }
+
+  // ─── Contract modal submit ───────────────────────────────────────────────────
+  if (interaction.isModalSubmit() && interaction.customId === 'contract_modal') {
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
+    }
+    if (hasConsented(interaction.user.id)) {
+      return interaction.reply({ content: lang.joinAlready, flags: MessageFlags.Ephemeral });
+    }
+    const phrase = interaction.fields.getTextInputValue('consent_phrase').trim();
+    if (phrase !== lang.joinAcceptPhrase) {
+      return interaction.reply({ content: lang.joinWrongPhrase, flags: MessageFlags.Ephemeral });
+    }
+    // Defer first — role assignment peut prendre du temps
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     addConsent(interaction.user.id);
     await assignParticipantRole(interaction.user.id);
     const confirmedEmbed = new EmbedBuilder()
@@ -339,7 +376,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setTitle(lang.joinSuccessTitle)
       .setDescription(lang.joinSuccess)
       .setTimestamp();
-    return interaction.editReply({ embeds: [confirmedEmbed], components: [] });
+    return interaction.editReply({ embeds: [confirmedEmbed] });
   }
 
   // ─── Playerlist pagination buttons ─────────────────────────────────────────
@@ -528,17 +565,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const contractEmbed = new EmbedBuilder()
       .setColor(0xE8C547)
       .setTitle(lang.joinContractTitle)
-      .setDescription(lang.joinContractDesc)
+      .setDescription(CONTRACT_MESSAGE ?? lang.joinContractDesc)
       .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId('accept_contract')
+        .setCustomId('open_contract_modal')
         .setLabel(lang.joinButton)
         .setStyle(ButtonStyle.Success),
     );
 
     return interaction.reply({ embeds: [contractEmbed], components: [row], flags: MessageFlags.Ephemeral });
+  }
+
+  // ─── /contrat ──────────────────────────────────────────────────────────────
+  if (interaction.commandName === 'contrat') {
+    const contractEmbed = new EmbedBuilder()
+      .setColor(0xE8C547)
+      .setTitle(lang.joinContractTitle)
+      .setDescription(CONTRACT_MESSAGE ?? lang.joinContractDesc)
+      .setTimestamp();
+    return interaction.reply({ embeds: [contractEmbed], flags: MessageFlags.Ephemeral });
   }
 
   // ─── /playerlist ───────────────────────────────────────────────────────────

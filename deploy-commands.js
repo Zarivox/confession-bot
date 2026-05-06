@@ -30,6 +30,11 @@ const joinCommand = new SlashCommandBuilder()
   .setDescription('Sign the participation contract to access the confession system')
   .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel);
 
+const contratCommand = new SlashCommandBuilder()
+  .setName('contrat')
+  .setDescription('Read the participation contract at any time')
+  .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel);
+
 const playerlistCommand = new SlashCommandBuilder()
   .setName('playerlist')
   .setDescription('Show members who have signed the confession contract')
@@ -172,10 +177,10 @@ const rest = new REST().setToken(process.env.BOT_TOKEN);
 try {
   console.log('Deploying slash commands...');
 
-  // /confession and /join — global commands (available in DMs)
+  // /confession, /join, /contrat — global commands (available in DMs)
   await rest.put(
     Routes.applicationCommands(process.env.CLIENT_ID),
-    { body: [confessionCommand.toJSON(), joinCommand.toJSON()] }
+    { body: [confessionCommand.toJSON(), joinCommand.toJSON(), contratCommand.toJSON()] }
   );
 
   // /top, /admin, /playerlist — guild commands (instant update, server only)

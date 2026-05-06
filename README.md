@@ -62,6 +62,7 @@ Create a `.env` file at the root based on `.env.example`:
 | `MAX_CONFESSIONS_MEMORY` | — | Max confessions kept in JSON (default: 1000) |
 | `PARTICIPANT_ROLE_ID` | — | Role assigned on `/join` (enables channel auto-permissions) |
 | `ALLOW_CHANNEL_MESSAGES` | — | `true`/`false` — let participants type in the channel (default: `false`) |
+| `CONTRACT_MESSAGE` | — | Custom contract text for `/join` and `/contrat` (`default` = built-in locale text) |
 
 > All Discord IDs must be 17–20 digit snowflakes — the bot validates the format on startup and exits if any is malformed.
 
@@ -93,6 +94,7 @@ On startup, the bot will:
 | Command | Where | Description |
 |---|---|---|
 | `/join` | Server or DM | Sign the participation contract (required before posting) |
+| `/contrat` | Server or DM | Read the participation contract at any time (read-only) |
 | `/confession` | DM only | Post an anonymous confession |
 | `/confession reveal:true` | DM only | Post a confession with your identity |
 | `/top période:...` | Server | Show the most upvoted confessions (week/month/all) |
