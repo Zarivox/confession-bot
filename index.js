@@ -11,65 +11,64 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, (c) => {
-  console.log(`Bot connecté en tant que ${c.user.tag}`);
-  console.log(`Confessions → salon ID: ${CONFESSION_CHANNEL_ID}`);
+  console.log(`Logged in as ${c.user.tag}`);
+  console.log(`Confessions channel ID: ${CONFESSION_CHANNEL_ID}`);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName !== 'confession') return;
 
-  // Bloquer si la commande est utilisée dans un serveur
+  // Block the command if used inside a server
   if (interaction.inGuild()) {
     return interaction.reply({
-      content: '❌ Cette commande ne peut être utilisée **qu\'en message privé** avec moi.',
+      content: '❌ This command can only be used in **direct messages** with me.',
       ephemeral: true,
     });
   }
 
   const message = interaction.options.getString('message');
 
-  // Récupérer le salon de confessions
+  // Fetch the confession channel
   let confessionChannel;
   try {
     confessionChannel = await client.channels.fetch(CONFESSION_CHANNEL_ID);
   } catch {
     return interaction.reply({
-      content: '❌ Le salon de confessions est introuvable. Contacte un administrateur.',
+      content: '❌ The confession channel could not be found. Please contact an administrator.',
       ephemeral: true,
     });
   }
 
   if (!confessionChannel?.isTextBased()) {
     return interaction.reply({
-      content: '❌ Le salon configuré n\'est pas un salon textuel valide.',
+      content: '❌ The configured channel is not a valid text channel.',
       ephemeral: true,
     });
   }
 
-  // Construire l'embed de confession anonyme
   const embed = new EmbedBuilder()
     .setColor(0x2b2d31)
-    .setTitle('💬 Confession anonyme')
+    .setTitle('💬 Anonymous Confession')
     .setDescription(message)
-    .setFooter({ text: 'Anonyme' })
+    .setFooter({ text: 'Anonymous' })
     .setTimestamp();
 
-  // Poster la confession et ajouter les réactions
+  // Post the confession and add voting reactions
   try {
     const posted = await confessionChannel.send({ embeds: [embed] });
     await posted.react('✅');
     await posted.react('❌');
   } catch {
     return interaction.reply({
-      content: '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
+      content: '❌ Failed to send your confession. Check the bot permissions in the channel.',
       ephemeral: true,
     });
   }
 
-  // Confirmer à l'utilisateur en MP (message éphémère = visible que par lui)
+  // Confirm to the user via ephemeral reply (only visible to them)
   await interaction.reply({
-    content: '✅ Ta confession a été postée anonymement !',
+    content: '✅ Your confession has been posted anonymously!',
     ephemeral: true,
   });
 });

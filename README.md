@@ -1,84 +1,84 @@
 # 💬 Confession Bot
 
-Bot Discord permettant d'envoyer des confessions anonymes dans un salon dédié via message privé.
+A Discord bot that lets users send anonymous confessions to a dedicated channel via direct message.
 
-## Fonctionnement
+## How it works
 
-1. Un utilisateur ouvre les **MP du bot** et utilise la commande `/confession`
-2. Il rédige son message dans l'option de la commande
-3. Le bot poste la confession dans le salon configuré sous forme d'embed **anonyme**
-4. Les membres peuvent voter avec ✅ ou ❌ pour donner leur avis
-5. L'auteur reçoit une confirmation privée — personne ne sait que c'est lui
+1. A user opens a **DM with the bot** and runs the `/confession` command
+2. They write their message in the command option
+3. The bot posts the confession in the configured channel as an **anonymous embed**
+4. Server members can vote with ✅ or ❌ to share their opinion
+5. The author gets a private confirmation — no one knows it was them
 
-> La commande est bloquée dans les salons de serveur, elle ne fonctionne **qu'en MP**.
+> The command is blocked in server channels. It only works in **DMs**.
 
-## Installation
+## Setup
 
-### Prérequis
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
-- Un bot Discord créé sur le [Portail développeur](https://discord.com/developers/applications)
+- A Discord bot created on the [Developer Portal](https://discord.com/developers/applications)
 
-### 1. Cloner le projet
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Zarivox/confession-bot.git
 cd confession-bot
 ```
 
-### 2. Installer les dépendances
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configurer les variables d'environnement
+### 3. Configure environment variables
 
-Crée un fichier `.env` à la racine en te basant sur `.env.example` :
+Create a `.env` file at the root based on `.env.example`:
 
 ```env
-BOT_TOKEN=ton_token_ici
-CLIENT_ID=ton_client_id_ici
-CONFESSION_CHANNEL_ID=id_du_salon_ici
+BOT_TOKEN=your_token_here
+CLIENT_ID=your_client_id_here
+CONFESSION_CHANNEL_ID=your_channel_id_here
 ```
 
-| Variable | Où la trouver |
+| Variable | Where to find it |
 |---|---|
-| `BOT_TOKEN` | Portail développeur → Bot → Token |
-| `CLIENT_ID` | Portail développeur → General Information → Application ID |
-| `CONFESSION_CHANNEL_ID` | Clic droit sur le salon Discord → Copier l'identifiant |
+| `BOT_TOKEN` | Developer Portal → Bot → Token |
+| `CLIENT_ID` | Developer Portal → General Information → Application ID |
+| `CONFESSION_CHANNEL_ID` | Right-click the Discord channel → Copy Channel ID |
 
-### 4. Déployer la commande slash
+### 4. Deploy the slash command
 
 ```bash
 npm run deploy
 ```
 
-> Les commandes globales peuvent mettre jusqu'à **1 heure** à apparaître, mais c'est souvent instantané.
+> Global commands can take up to **1 hour** to appear, but are usually instant.
 
-### 5. Lancer le bot
+### 5. Start the bot
 
 ```bash
 npm start
 ```
 
-## Permissions requises
+## Required permissions
 
-Dans le salon des confessions, le bot doit avoir :
+The bot needs the following permissions in the confession channel:
 
-- `Voir le salon`
-- `Envoyer des messages`
-- `Intégrer des liens` (embeds)
-- `Ajouter des réactions`
+- `View Channel`
+- `Send Messages`
+- `Embed Links`
+- `Add Reactions`
 
-## Structure du projet
+## Project structure
 
 ```
 confession-bot/
-├── index.js              # Bot principal
-├── deploy-commands.js    # Enregistrement de la commande slash
+├── index.js              # Main bot logic
+├── deploy-commands.js    # Slash command registration
 ├── package.json
-└── .env.example          # Modèle de configuration
+└── .env.example          # Environment variable template
 ```
 
 ## Stack
