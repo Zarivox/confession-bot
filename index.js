@@ -268,7 +268,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.deleteSuccess(number), ephemeral: true });
     }
 
-    if (sub === 'reset') {
+    if (sub === 'wipe') {
       const confirm = interaction.options.getString('confirm');
       if (confirm !== 'RESET') {
         return interaction.reply({ content: lang.resetAllWrongConfirm, ephemeral: true });

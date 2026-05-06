@@ -85,7 +85,7 @@ const adminCommand = new SlashCommandBuilder()
   )
   .addSubcommand(sub =>
     sub
-      .setName('reset')
+      .setName('wipe')
       .setDescription('Delete ALL confessions and wipe memory — restarts at #1')
       .addStringOption(option =>
         option
