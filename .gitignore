@@ -7,3 +7,6 @@ cooldowns.json
 consents.json
 bans.json
 *.json.tmp
+
+# Private locale overrides — instance-specific text (e.g. custom contract)
+locales/private.js

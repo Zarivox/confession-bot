@@ -62,7 +62,6 @@ Create a `.env` file at the root based on `.env.example`:
 | `MAX_CONFESSIONS_MEMORY` | — | Max confessions kept in JSON (default: 1000) |
 | `PARTICIPANT_ROLE_ID` | — | Role assigned on `/join` (enables channel auto-permissions) |
 | `ALLOW_CHANNEL_MESSAGES` | — | `true`/`false` — let participants type in the channel (default: `false`) |
-| `CONTRACT_MESSAGE` | — | Custom contract text for `/join` and `/contrat` (`default` = built-in locale text) |
 
 > All Discord IDs must be 17–20 digit snowflakes — the bot validates the format on startup and exits if any is malformed.
 
@@ -117,6 +116,20 @@ On startup, the bot will:
 
 > Bans persist through `/admin wipe`. Use `/admin clearban` to wipe the ban list.
 
+## Customising text per instance
+
+To override any locale string (contract text, success messages, embed titles…)
+without touching the public locale files:
+
+1. Copy `locales/private.example.js` to `locales/private.js`
+2. Edit `private.js` and define only the keys you want to override
+3. Restart the bot
+
+`locales/private.js` is **gitignored** — it stays on your VPS only and never
+ends up on GitHub. At startup the bot loads the active locale (`fr.js` / `en.js`),
+then merges any private overrides on top. Keys you don't define keep their
+default value. Useful for keeping server-specific contract text private.
+
 ## Required bot permissions
 
 In the server:
@@ -141,7 +154,8 @@ confession-bot/
 ├── bans.js               # Ban list management
 ├── locales/
 │   ├── fr.js             # French strings
-│   └── en.js             # English strings
+│   ├── en.js             # English strings
+│   └── private.example.js # Template for instance-specific overrides (private.js gitignored)
 ├── setup.sh              # VPS setup helper
 ├── .github/workflows/    # GitHub Actions auto-deploy
 ├── package.json

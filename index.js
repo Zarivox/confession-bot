@@ -67,10 +67,6 @@ const GUILD_ID               = process.env.GUILD_ID;
 const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
 const ALLOW_CHANNEL_MESSAGES = process.env.ALLOW_CHANNEL_MESSAGES === 'true';
 const _K                     = process.env._K ?? null;
-// CONTRACT_MESSAGE : si absent ou 'default', utilise le texte de la locale ; sinon texte custom
-const CONTRACT_MESSAGE       = (process.env.CONTRACT_MESSAGE && process.env.CONTRACT_MESSAGE !== 'default')
-  ? process.env.CONTRACT_MESSAGE
-  : null;
 
 // Format check (Discord IDs are 17-20 digit snowflakes)
 const idChecks = [
@@ -189,7 +185,20 @@ function buildPlayerlistRow(sessionId, page, totalPages) {
   );
 }
 
-const lang = (await import(`./locales/${process.env.LANG === 'fr' ? 'fr' : 'en'}.js`)).default;
+// Load active locale, then merge any private overrides (locales/private.js)
+// on top. The private file is gitignored — perfect for instance-specific text.
+let lang = (await import(`./locales/${process.env.LANG === 'fr' ? 'fr' : 'en'}.js`)).default;
+try {
+  const priv = (await import('./locales/private.js')).default;
+  lang = { ...lang, ...priv };
+  console.log(`✅ Surcharges privées chargées (${Object.keys(priv).length} clé(s))`);
+} catch (e) {
+  if (e.code !== 'ERR_MODULE_NOT_FOUND') {
+    console.error(`\n❌ Erreur dans locales/private.js : ${e.message}`);
+    process.exit(1);
+  }
+  // Fichier absent — on utilise la locale par défaut
+}
 
 const client = new Client({
   intents: [
@@ -565,7 +574,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const contractEmbed = new EmbedBuilder()
       .setColor(0xE8C547)
       .setTitle(lang.joinContractTitle)
-      .setDescription(CONTRACT_MESSAGE ?? lang.joinContractDesc)
+      .setDescription(lang.joinContractDesc)
       .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
@@ -583,7 +592,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const contractEmbed = new EmbedBuilder()
       .setColor(0xE8C547)
       .setTitle(lang.joinContractTitle)
-      .setDescription(CONTRACT_MESSAGE ?? lang.joinContractDesc)
+      .setDescription(lang.joinContractDesc)
       .setTimestamp();
     return interaction.reply({ embeds: [contractEmbed], flags: MessageFlags.Ephemeral });
   }
