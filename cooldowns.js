@@ -1,22 +1,31 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } from 'fs';
 
 const FILE = './cooldowns.json';
+const DEFAULT = { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
 
 function load() {
-  if (!existsSync(FILE)) return { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
+  if (!existsSync(FILE)) return { ...DEFAULT };
   try {
     const data = JSON.parse(readFileSync(FILE, 'utf-8'));
     // Migration: add missing fields if upgrading from older version
     if (data.delayPublicMs === undefined) data.delayPublicMs = 0;
     if (!data.usersPublic) data.usersPublic = {};
     return data;
-  } catch {
-    return { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
+  } catch (e) {
+    console.error('[cooldowns] Corrupted JSON:', e.message);
+    try {
+      const backup = `${FILE}.corrupted-${Date.now()}`;
+      copyFileSync(FILE, backup);
+      console.error(`[cooldowns] Backup saved to ${backup}`);
+    } catch {}
+    return { ...DEFAULT };
   }
 }
 
 function save(data) {
-  writeFileSync(FILE, JSON.stringify(data, null, 2));
+  const tmp = FILE + '.tmp';
+  writeFileSync(tmp, JSON.stringify(data, null, 2));
+  renameSync(tmp, FILE);
 }
 
 // ─── Anonymous cooldown ───────────────────────────────────────────────────────

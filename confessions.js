@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } from 'fs';
 
 const FILE = './confessions.json';
 
@@ -7,16 +7,21 @@ function load() {
   try {
     return JSON.parse(readFileSync(FILE, 'utf-8'));
   } catch (e) {
-    console.error('[confessions] Corrupted JSON file, resetting:', e.message);
+    console.error('[confessions] Corrupted JSON file:', e.message);
+    try {
+      const backup = `${FILE}.corrupted-${Date.now()}`;
+      copyFileSync(FILE, backup);
+      console.error(`[confessions] Backup saved to ${backup}`);
+    } catch {}
     return { count: 0, list: [] };
   }
 }
 
-// Atomic write: write to a temp file then rename to avoid partial writes on crash
+// True atomic write: write tmp then rename (POSIX rename is atomic)
 function save(data) {
   const tmp = FILE + '.tmp';
   writeFileSync(tmp, JSON.stringify(data, null, 2));
-  writeFileSync(FILE, JSON.stringify(data, null, 2));
+  renameSync(tmp, FILE);
 }
 
 // Reserve a confession number atomically — call this BEFORE posting the Discord message

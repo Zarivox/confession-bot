@@ -55,11 +55,29 @@ if (missingEnv.length > 0) {
   process.exit(1);
 }
 
+const SNOWFLAKE_REGEX = /^\d{17,20}$/;
+
 const CONFESSION_CHANNEL_ID  = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID               = process.env.ADMIN_ID;
 const GUILD_ID               = process.env.GUILD_ID;
 const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
 const ALLOW_CHANNEL_MESSAGES = process.env.ALLOW_CHANNEL_MESSAGES === 'true';
+
+// Format check (Discord IDs are 17-20 digit snowflakes)
+const idChecks = [
+  { name: 'GUILD_ID',              value: GUILD_ID },
+  { name: 'CONFESSION_CHANNEL_ID', value: CONFESSION_CHANNEL_ID },
+  { name: 'ADMIN_ID',              value: ADMIN_ID },
+];
+if (PARTICIPANT_ROLE_ID) idChecks.push({ name: 'PARTICIPANT_ROLE_ID', value: PARTICIPANT_ROLE_ID });
+
+const invalidIds = idChecks.filter(c => !SNOWFLAKE_REGEX.test(c.value));
+if (invalidIds.length > 0) {
+  console.error(`\n❌ IDs au format invalide (doivent être 17-20 chiffres) :`);
+  invalidIds.forEach(c => console.error(`  • ${c.name} = "${c.value}"`));
+  console.error('Corrige le .env et relance le bot.\n');
+  process.exit(1);
+}
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
@@ -288,6 +306,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (hasConsented(interaction.user.id)) {
       return interaction.reply({ content: lang.joinAlready, flags: MessageFlags.Ephemeral });
     }
+    // Defer the update first to avoid 3s timeout on role assignment API calls
+    await interaction.deferUpdate();
     addConsent(interaction.user.id);
     await assignParticipantRole(interaction.user.id);
     const confirmedEmbed = new EmbedBuilder()
@@ -295,7 +315,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setTitle(lang.joinSuccessTitle)
       .setDescription(lang.joinSuccess)
       .setTimestamp();
-    return interaction.update({ embeds: [confirmedEmbed], components: [] });
+    return interaction.editReply({ embeds: [confirmedEmbed], components: [] });
   }
 
   // ─── Playerlist pagination buttons ─────────────────────────────────────────
@@ -407,7 +427,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const titleText = anonymous
       ? `${lang.embedTitle} #${nextNumber}`
-      : `💬 Confession #${nextNumber}`;
+      : `${lang.embedTitlePublic} #${nextNumber}`;
 
     const embed = new EmbedBuilder()
       .setColor(anonymous ? 0xE8C547 : 0x5865F2)
@@ -452,15 +472,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (anonymous) {
-      setLastConfession(interaction.user.id);
       const delay = getDelay();
+      // Only persist timestamp if cooldown is enabled — avoids unnecessary disk writes
+      if (delay > 0) setLastConfession(interaction.user.id);
       await interaction.reply({
         content: delay > 0 ? lang.success(formatDuration(delay)) : lang.successNoDelay,
         flags: MessageFlags.Ephemeral,
       });
     } else {
-      setLastPublicConfession(interaction.user.id);
       const publicDelay = getPublicDelay();
+      if (publicDelay > 0) setLastPublicConfession(interaction.user.id);
       await interaction.reply({
         content: publicDelay > 0 ? lang.success(formatDuration(publicDelay)) : lang.successReveal,
         flags: MessageFlags.Ephemeral,
@@ -618,9 +639,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
         } catch { /* already deleted or unreachable */ }
       }
 
+      // Snapshot consenters BEFORE reset so we can strip the participant role
+      const consenters = getAllConsents();
+
       resetConfessions();
       resetAllCooldowns();
       resetConsents();
+
+      // Remove participant role from everyone — keeps Discord state in sync with JSON
+      if (PARTICIPANT_ROLE_ID) {
+        for (const userId of consenters) {
+          await removeParticipantRole(userId);
+        }
+      }
 
       return interaction.editReply({ content: lang.resetAllSuccess(deleted) });
     }
@@ -633,22 +664,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (!target && !rawId) {
         return interaction.reply({ content: lang.banNoTarget, flags: MessageFlags.Ephemeral });
       }
+      if (rawId && !SNOWFLAKE_REGEX.test(rawId)) {
+        return interaction.reply({ content: lang.banInvalidId, flags: MessageFlags.Ephemeral });
+      }
+
+      // Defer immediately to avoid 3s timeout (role removal + consent + optional message deletes)
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const userId   = target?.id ?? rawId;
       const username = target?.username ?? rawId;
 
       const ok = addBan(userId);
-      if (!ok) return interaction.reply({ content: lang.banAlready(username), flags: MessageFlags.Ephemeral });
+      if (!ok) return interaction.editReply({ content: lang.banAlready(username) });
       removeConsent(userId);
       await removeParticipantRole(userId);
 
       if (!deletePublic) {
-        return interaction.reply({ content: lang.banSuccess(username), flags: MessageFlags.Ephemeral });
+        return interaction.editReply({ content: lang.banSuccess(username) });
       }
 
       // Delete all public confessions from this user
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
       const toDelete = getAll().filter(c => c.authorId === userId && !c.anonymous);
       let deleted = 0;
 
@@ -675,6 +710,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const rawId  = interaction.options.getString('id');
       if (!target && !rawId) {
         return interaction.reply({ content: lang.banNoTarget, flags: MessageFlags.Ephemeral });
+      }
+      if (rawId && !SNOWFLAKE_REGEX.test(rawId)) {
+        return interaction.reply({ content: lang.banInvalidId, flags: MessageFlags.Ephemeral });
       }
       const userId   = target?.id ?? rawId;
       const username = target?.username ?? rawId;
@@ -726,6 +764,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const peakHour   = hourCounts.indexOf(Math.max(...hourCounts));
       const totalVotes = totalYes + totalNo;
       const posRatio   = totalVotes > 0 ? Math.round((totalYes / totalVotes) * 100) : 0;
+      const negRatio   = totalVotes > 0 ? 100 - posRatio : 0;
       const avgPerDay  = all.length > 0
         ? (all.length / Math.max(1, Math.ceil((Date.now() - all[0].timestamp) / 86400000))).toFixed(1)
         : 0;
@@ -734,13 +773,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setColor(0xE8C547)
         .setTitle(lang.statsTitle)
         .addFields(
-          { name: lang.statsTotal,     value: `${all.length} confessions`,     inline: true },
-          { name: lang.statsWeek,      value: `${week.length} confessions`,    inline: true },
-          { name: lang.statsToday,     value: `${today.length} confessions`,   inline: true },
-          { name: lang.statsUpvotes,   value: `${totalYes} (${posRatio}%)`,    inline: true },
-          { name: lang.statsDownvotes, value: `${totalNo} (${100-posRatio}%)`, inline: true },
-          { name: lang.statsAvg,       value: `${avgPerDay}`,                  inline: true },
-          { name: lang.statsPeak,      value: `${peakHour}h–${peakHour+1}h`,  inline: true },
+          { name: lang.statsTotal,     value: `${all.length} confessions`,   inline: true },
+          { name: lang.statsWeek,      value: `${week.length} confessions`,  inline: true },
+          { name: lang.statsToday,     value: `${today.length} confessions`, inline: true },
+          { name: lang.statsUpvotes,   value: `${totalYes} (${posRatio}%)`,  inline: true },
+          { name: lang.statsDownvotes, value: `${totalNo} (${negRatio}%)`,   inline: true },
+          { name: lang.statsAvg,       value: `${avgPerDay}`,                inline: true },
+          { name: lang.statsPeak,      value: `${peakHour}h–${peakHour+1}h`, inline: true },
         )
         .setTimestamp();
 

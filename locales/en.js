@@ -11,13 +11,11 @@ export default {
   success:         (t) => `✅ Your confession has been posted anonymously! You can post again in **${t}**.`,
   successNoDelay:  `✅ Your confession has been posted anonymously!`,
   successReveal:   `✅ Your confession has been posted with your identity.`,
-  successRevealNoDelay: `✅ Your confession has been posted with your identity.`,
-  botReady:        (tag) => `✅ Bot **${tag}** started and online.`,
 
   // Embed
-  embedTitle:      '💬 Anonymous Confession',
+  embedTitle:        '💬 Anonymous Confession',
+  embedTitlePublic:  '💬 Confession',
   embedFooter:       'Anonymous',
-  embedFooterPublic: 'Public confession',
   postedBy:          'Posted by',
 
   // /top
@@ -64,7 +62,6 @@ export default {
 
   // Internal helper
   authorResult:    (n, tag, id) => `🔍 Confession **#${n}** was posted by **${tag}** (<@${id}>)`,
-  revealAdminOnly: '❌ This action is reserved for the administrator.',
 
   // /admin stats
   statsTitle:    '📊 Confession Statistics',
@@ -82,7 +79,8 @@ export default {
   banSuccessDeleted: (u, n) => `✅ **${u}** has been banned, removed from the participant list, and **${n}** public confession(s) deleted.`,
   banAlready:    (u) => `❌ **${u}** is already banned.`,
   banNoTarget:   '❌ Provide a user or a user ID.',
-  unbanSuccess:  (u) => `✅ **${u}** has been unbanned.`,
+  banInvalidId:  '❌ The provided ID is not a valid Discord ID (17-20 digits).',
+  unbanSuccess:  (u) => `✅ **${u}** has been unbanned. They must re-run \`/join\` to post again.`,
   banNotFound:   (u) => `❌ **${u}** is not in the ban list.`,
   banlistTitle:         '🚫 Banned members',
   banlistEmpty:         '✅ No banned members.',

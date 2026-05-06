@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } from 'fs';
 
 const FILE = './bans.json';
 
@@ -7,13 +7,20 @@ function load() {
   try {
     return JSON.parse(readFileSync(FILE, 'utf-8'));
   } catch (e) {
-    console.error('[bans] Corrupted JSON, resetting:', e.message);
+    console.error('[bans] Corrupted JSON:', e.message);
+    try {
+      const backup = `${FILE}.corrupted-${Date.now()}`;
+      copyFileSync(FILE, backup);
+      console.error(`[bans] Backup saved to ${backup}`);
+    } catch {}
     return { list: [] };
   }
 }
 
 function save(data) {
-  writeFileSync(FILE, JSON.stringify(data, null, 2));
+  const tmp = FILE + '.tmp';
+  writeFileSync(tmp, JSON.stringify(data, null, 2));
+  renameSync(tmp, FILE);
 }
 
 export function isBanned(userId) {

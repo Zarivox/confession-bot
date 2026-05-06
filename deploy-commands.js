@@ -1,10 +1,10 @@
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { REST, Routes, SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import 'dotenv/config';
 
 const confessionCommand = new SlashCommandBuilder()
   .setName('confession')
   .setDescription('Send a confession to the dedicated channel')
-  .setDMPermission(true)
+  .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel)
   .addStringOption(option =>
     option
       .setName('message')
@@ -28,17 +28,17 @@ const confessionCommand = new SlashCommandBuilder()
 const joinCommand = new SlashCommandBuilder()
   .setName('join')
   .setDescription('Sign the participation contract to access the confession system')
-  .setDMPermission(true);
+  .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel);
 
 const playerlistCommand = new SlashCommandBuilder()
   .setName('playerlist')
   .setDescription('Show members who have signed the confession contract')
-  .setDMPermission(false);
+  .setContexts(InteractionContextType.Guild);
 
 const topCommand = new SlashCommandBuilder()
   .setName('top')
   .setDescription('Show the most upvoted confessions')
-  .setDMPermission(false)
+  .setContexts(InteractionContextType.Guild)
   .addStringOption(option =>
     option
       .setName('période')
@@ -54,7 +54,7 @@ const topCommand = new SlashCommandBuilder()
 const adminCommand = new SlashCommandBuilder()
   .setName('admin')
   .setDescription('Admin commands for managing confessions')
-  .setDMPermission(false)
+  .setContexts(InteractionContextType.Guild)
   .addSubcommand(sub =>
     sub
       .setName('reset')

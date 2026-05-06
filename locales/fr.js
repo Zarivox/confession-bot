@@ -11,13 +11,11 @@ export default {
   success:         (t) => `✅ Ta confession a été postée anonymement ! Tu pourras en poster une nouvelle dans **${t}**.`,
   successNoDelay:  `✅ Ta confession a été postée anonymement !`,
   successReveal:   `✅ Ta confession a été postée avec ton identité.`,
-  successRevealNoDelay: `✅ Ta confession a été postée avec ton identité.`,
-  botReady:        (tag) => `✅ Bot **${tag}** démarré et en ligne.`,
 
   // Embed
-  embedTitle:  '💬 Confession anonyme',
+  embedTitle:        '💬 Confession anonyme',
+  embedTitlePublic:  '💬 Confession',
   embedFooter:       'Anonyme',
-  embedFooterPublic: 'Confession publique',
   postedBy:          'Posté par',
 
   // /top
@@ -64,7 +62,6 @@ export default {
 
   // Helper interne
   authorResult:    (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
-  revealAdminOnly: '❌ Cette action est réservée à l\'administrateur.',
 
   // /admin stats
   statsTitle:    '📊 Statistiques des confessions',
@@ -82,7 +79,8 @@ export default {
   banSuccessDeleted: (u, n) => `✅ **${u}** a été banni, retiré de la liste des participants et **${n}** confession(s) publique(s) supprimée(s).`,
   banAlready:    (u) => `❌ **${u}** est déjà banni.`,
   banNoTarget:   '❌ Fournis un utilisateur ou un ID.',
-  unbanSuccess:  (u) => `✅ **${u}** a été débanni.`,
+  banInvalidId:  '❌ L\'ID fourni n\'est pas un ID Discord valide (17-20 chiffres).',
+  unbanSuccess:  (u) => `✅ **${u}** a été débanni. Pour reposter, il devra refaire \`/join\`.`,
   banNotFound:   (u) => `❌ **${u}** n'est pas dans la liste des bannis.`,
   banlistTitle:       '🚫 Membres bannis',
   banlistEmpty:       '✅ Aucun membre banni.',
