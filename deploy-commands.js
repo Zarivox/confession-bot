@@ -82,6 +82,17 @@ const adminCommand = new SlashCommandBuilder()
           .setRequired(true)
           .setMinValue(1)
       )
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('reset')
+      .setDescription('Delete ALL confessions and wipe memory — restarts at #1')
+      .addStringOption(option =>
+        option
+          .setName('confirm')
+          .setDescription('Type RESET to confirm')
+          .setRequired(true)
+      )
   );
 
 const rest = new REST().setToken(process.env.BOT_TOKEN);

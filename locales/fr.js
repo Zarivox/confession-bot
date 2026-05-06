@@ -33,7 +33,9 @@ export default {
   adminDenied:   '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
   resetSuccess:  (u) => `✅ Le cooldown de **${u}** a été réinitialisé. Il peut poster une confession immédiatement.`,
   delaySuccess:  (h) => `✅ Délai mis à jour : les utilisateurs peuvent maintenant poster toutes les **${h}h**.`,
-  deleteSuccess:   (n) => `✅ La confession **#${n}** a été supprimée.`,
-  deleteNotFound:  '❌ Aucune confession trouvée avec ce numéro.',
-  deletedEmbedDesc: 'Cette confession a été supprimée par l\'administrateur.',
+  deleteSuccess:      (n) => `✅ La confession **#${n}** a été supprimée.`,
+  deleteNotFound:     '❌ Aucune confession trouvée avec ce numéro.',
+  deletedEmbedDesc:   'Cette confession a été supprimée par l\'administrateur.',
+  resetAllWrongConfirm: '❌ Tu dois taper exactement **RESET** pour confirmer.',
+  resetAllSuccess:    (n) => `✅ Reset complet effectué. **${n}** message(s) supprimé(s). La prochaine confession sera la #1.`,
 };

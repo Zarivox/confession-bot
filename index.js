@@ -27,6 +27,7 @@ import {
   getAll,
   getSince,
   deleteConfession,
+  resetConfessions,
 } from './confessions.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
@@ -265,6 +266,31 @@ client.on(Events.InteractionCreate, async (interaction) => {
       } catch { /* message unreachable, already gone */ }
 
       return interaction.reply({ content: lang.deleteSuccess(number), ephemeral: true });
+    }
+
+    if (sub === 'reset') {
+      const confirm = interaction.options.getString('confirm');
+      if (confirm !== 'RESET') {
+        return interaction.reply({ content: lang.resetAllWrongConfirm, ephemeral: true });
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+
+      const all = getAll();
+      let deleted = 0;
+
+      for (const confession of all) {
+        try {
+          const ch  = await client.channels.fetch(confession.channelId);
+          const msg = await ch.messages.fetch(confession.messageId);
+          await msg.delete();
+          deleted++;
+        } catch { /* already deleted or unreachable */ }
+      }
+
+      resetConfessions();
+
+      return interaction.editReply({ content: lang.resetAllSuccess(deleted) });
     }
 
     if (sub === 'stats') {

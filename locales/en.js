@@ -33,7 +33,9 @@ export default {
   adminDenied:  '❌ You do not have permission to use this command.',
   resetSuccess: (u) => `✅ Cooldown reset for **${u}**. They can post a confession immediately.`,
   delaySuccess: (h) => `✅ Cooldown updated: users can now post every **${h}h**.`,
-  deleteSuccess:    (n) => `✅ Confession **#${n}** has been deleted.`,
-  deleteNotFound:   '❌ No confession found with that number.',
-  deletedEmbedDesc: 'This confession was deleted by the administrator.',
+  deleteSuccess:        (n) => `✅ Confession **#${n}** has been deleted.`,
+  deleteNotFound:       '❌ No confession found with that number.',
+  deletedEmbedDesc:     'This confession was deleted by the administrator.',
+  resetAllWrongConfirm: '❌ You must type exactly **RESET** to confirm.',
+  resetAllSuccess:      (n) => `✅ Full reset done. **${n}** message(s) deleted. Next confession will be #1.`,
 };
