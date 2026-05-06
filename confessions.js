@@ -64,25 +64,17 @@ export function getConfession(number) {
   return load().list.find(c => c.number === number) ?? null;
 }
 
-// Delete a confession and renumber subsequent ones
-// Returns { deleted, renumbered[] } or null if not found
+// Delete a confession — numbers are NOT reassigned to avoid confusion
+// Returns the deleted confession or null if not found
 export function deleteConfession(number) {
   const data = load();
   const idx = data.list.findIndex(c => c.number === number);
   if (idx === -1) return null;
 
   const deleted = data.list.splice(idx, 1)[0];
-
-  // Renumber all subsequent confessions
-  const renumbered = [];
-  for (let i = idx; i < data.list.length; i++) {
-    data.list[i].number -= 1;
-    renumbered.push(data.list[i]);
-  }
-
-  data.count = data.list.length;
+  // data.count is intentionally kept as-is so next confession gets a fresh number
   save(data);
-  return { deleted, renumbered };
+  return deleted;
 }
 
 // Reset all confessions

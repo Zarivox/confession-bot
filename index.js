@@ -23,6 +23,7 @@ import {
   vote,
   getVotes,
   getConfession,
+  getCount,
   getAll,
   getSince,
   deleteConfession,
@@ -150,7 +151,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.invalidImage, ephemeral: true });
     }
 
-    const nextNumber = getAll().length + 1;
+    const nextNumber = getCount() + 1;
 
     const footerText = anonymous
       ? lang.embedFooter
@@ -245,18 +246,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (sub === 'delete') {
       const number = interaction.options.getInteger('number');
-      const result = deleteConfession(number);
+      const deleted = deleteConfession(number);
 
-      if (!result) {
+      if (!deleted) {
         return interaction.reply({ content: lang.deleteNotFound, ephemeral: true });
       }
 
-      // Try to delete the actual Discord message
+      // Edit the Discord message to show it was removed — don't delete it
       try {
-        const ch  = await client.channels.fetch(result.deleted.channelId);
-        const msg = await ch.messages.fetch(result.deleted.messageId);
-        await msg.delete();
-      } catch { /* message already deleted or unreachable */ }
+        const ch  = await client.channels.fetch(deleted.channelId);
+        const msg = await ch.messages.fetch(deleted.messageId);
+        const deletedEmbed = new EmbedBuilder()
+          .setColor(0x808080)
+          .setTitle(`🗑️ Confession #${number}`)
+          .setDescription(lang.deletedEmbedDesc)
+          .setTimestamp();
+        await msg.edit({ embeds: [deletedEmbed], components: [] });
+      } catch { /* message unreachable, already gone */ }
 
       return interaction.reply({ content: lang.deleteSuccess(number), ephemeral: true });
     }
