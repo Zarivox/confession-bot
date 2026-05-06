@@ -30,6 +30,12 @@ import {
   deleteConfession,
   resetConfessions,
 } from './confessions.js';
+import {
+  hasConsented,
+  addConsent,
+  resetConsents,
+  getAllConsents,
+} from './consents.js';
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID              = process.env.ADMIN_ID;
@@ -91,6 +97,20 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
 
+  // ─── Accept contract button ─────────────────────────────────────────────────
+  if (interaction.isButton() && interaction.customId === 'accept_contract') {
+    if (hasConsented(interaction.user.id)) {
+      return interaction.reply({ content: lang.joinAlready, ephemeral: true });
+    }
+    addConsent(interaction.user.id);
+    const confirmedEmbed = new EmbedBuilder()
+      .setColor(0x57F287)
+      .setTitle('✅ Contrat signé !')
+      .setDescription(lang.joinSuccess)
+      .setTimestamp();
+    return interaction.update({ embeds: [confirmedEmbed], components: [] });
+  }
+
   // ─── Vote buttons ───────────────────────────────────────────────────────────
   if (interaction.isButton()) {
     const match = interaction.customId.match(/^vote_(yes|no)_(\d+)$/);
@@ -120,6 +140,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.commandName === 'confession') {
     if (interaction.inGuild()) {
       return interaction.reply({ content: lang.dmOnly, ephemeral: true });
+    }
+
+    if (!hasConsented(interaction.user.id)) {
+      return interaction.reply({ content: lang.joinNotConsented, ephemeral: true });
     }
 
     const message  = interaction.options.getString('message');
@@ -212,6 +236,48 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else {
       await interaction.reply({ content: lang.successReveal, ephemeral: true });
     }
+  }
+
+  // ─── /join ─────────────────────────────────────────────────────────────────
+  if (interaction.commandName === 'join') {
+    if (hasConsented(interaction.user.id)) {
+      return interaction.reply({ content: lang.joinAlready, ephemeral: true });
+    }
+
+    const contractEmbed = new EmbedBuilder()
+      .setColor(0xE8C547)
+      .setTitle(lang.joinContractTitle)
+      .setDescription(lang.joinContractDesc)
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('accept_contract')
+        .setLabel(lang.joinButton)
+        .setStyle(ButtonStyle.Success),
+    );
+
+    return interaction.reply({ embeds: [contractEmbed], components: [row], ephemeral: true });
+  }
+
+  // ─── /playerlist ───────────────────────────────────────────────────────────
+  if (interaction.commandName === 'playerlist') {
+    await interaction.deferReply();
+
+    const ids = getAllConsents();
+    if (ids.length === 0) {
+      return interaction.editReply(lang.playerlistEmpty);
+    }
+
+    const mentions = ids.map(id => `<@${id}>`).join('\n');
+
+    const embed = new EmbedBuilder()
+      .setColor(0xE8C547)
+      .setTitle(`${lang.playerlistTitle} (${ids.length})`)
+      .setDescription(mentions)
+      .setTimestamp();
+
+    return interaction.editReply({ embeds: [embed] });
   }
 
   // ─── /top ──────────────────────────────────────────────────────────────────
@@ -310,6 +376,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       resetConfessions();
       resetAllCooldowns();
+      resetConsents();
 
       return interaction.editReply({ content: lang.resetAllSuccess(deleted) });
     }

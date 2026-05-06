@@ -25,6 +25,16 @@ const confessionCommand = new SlashCommandBuilder()
       .setRequired(false)
   );
 
+const joinCommand = new SlashCommandBuilder()
+  .setName('join')
+  .setDescription('Sign the participation contract to access the confession system')
+  .setDMPermission(true);
+
+const playerlistCommand = new SlashCommandBuilder()
+  .setName('playerlist')
+  .setDescription('Show members who have signed the confession contract')
+  .setDMPermission(false);
+
 const topCommand = new SlashCommandBuilder()
   .setName('top')
   .setDescription('Show the most upvoted confessions')
@@ -74,7 +84,7 @@ const adminCommand = new SlashCommandBuilder()
   .addSubcommand(sub =>
     sub
       .setName('delete')
-      .setDescription('Delete a confession and renumber subsequent ones')
+      .setDescription('Delete a confession by number')
       .addIntegerOption(option =>
         option
           .setName('number')
@@ -100,16 +110,16 @@ const rest = new REST().setToken(process.env.BOT_TOKEN);
 try {
   console.log('Deploying slash commands...');
 
-  // /confession — global command (available in DMs)
+  // /confession and /join — global commands (available in DMs)
   await rest.put(
     Routes.applicationCommands(process.env.CLIENT_ID),
-    { body: [confessionCommand.toJSON()] }
+    { body: [confessionCommand.toJSON(), joinCommand.toJSON()] }
   );
 
-  // /top and /admin — guild commands (instant update, server only)
+  // /top, /admin, /playerlist — guild commands (instant update, server only)
   await rest.put(
     Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-    { body: [topCommand.toJSON(), adminCommand.toJSON()] }
+    { body: [topCommand.toJSON(), adminCommand.toJSON(), playerlistCommand.toJSON()] }
   );
 
   console.log('Commands deployed successfully!');

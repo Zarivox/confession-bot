@@ -28,6 +28,34 @@ export default {
   alreadyVoted:      '❌ Tu as déjà voté sur cette confession.',
   confessionNotFound:'❌ Confession introuvable.',
 
+  // /join
+  joinAlready:      '✅ Tu as déjà signé le contrat, tu peux utiliser `/confession`.',
+  joinSuccess:      '✅ Contrat signé ! Tu peux maintenant utiliser `/confession` en MP avec moi.',
+  joinContractTitle: '📋 Contrat de participation — Confessions',
+  joinContractDesc: [
+    '> Avant de pouvoir poster une confession, tu dois lire et accepter les conditions suivantes.\n',
+    '**1. Responsabilité**',
+    'Tu es entièrement responsable du contenu que tu publies. Toute confession peut avoir des conséquences réelles.',
+    '',
+    '**2. Contenu interdit**',
+    'Les confessions à caractère haineux, discriminatoire, harcelant ou illégal sont strictement interdites.',
+    '',
+    '**3. Modération**',
+    "L'administration se réserve le droit de supprimer toute confession sans préavis et sans avoir à se justifier.",
+    '',
+    '**4. Anonymat relatif**',
+    "Bien que les confessions soient anonymes pour les autres membres, **l'administrateur peut identifier l'auteur** en cas d'abus grave.",
+    '',
+    '**5. Engagement**',
+    "En cliquant sur **J'accepte**, tu confirmes avoir lu ces conditions, les comprendre, et t'engager à les respecter.",
+  ].join('\n'),
+  joinButton:       "J'accepte",
+  joinNotConsented: '❌ Tu dois d\'abord signer le contrat avec `/join` pour poster une confession.',
+
+  // /playerlist
+  playerlistTitle:  '📋 Membres ayant signé le contrat',
+  playerlistEmpty:  '❌ Aucun membre n\'a encore signé le contrat.',
+
   // Helper interne
   authorResult:    (n, tag, id) => `🔍 La confession **#${n}** a été postée par **${tag}** (<@${id}>)`,
   revealAdminOnly: '❌ Cette action est réservée à l\'administrateur.',
