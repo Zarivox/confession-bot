@@ -168,7 +168,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (anonymous) {
       embed.setFooter({ text: lang.embedFooter });
     } else {
-      embed.setFooter({ text: lang.embedFooter, iconURL: interaction.user.displayAvatarURL({ size: 64 }) });
+      embed.setFooter({ text: lang.embedFooterPublic, iconURL: interaction.user.displayAvatarURL({ size: 64 }) });
       embed.addFields({ name: lang.postedBy, value: `<@${interaction.user.id}>`, inline: true });
     }
 

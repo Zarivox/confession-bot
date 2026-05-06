@@ -13,8 +13,9 @@ export default {
 
   // Embed
   embedTitle:  '💬 Confession anonyme',
-  embedFooter: 'Anonyme',
-  postedBy:    'Posté par',
+  embedFooter:       'Anonyme',
+  embedFooterPublic: 'Confession publique',
+  postedBy:          'Posté par',
 
   // /top
   topTitle:    'Top confessions',
