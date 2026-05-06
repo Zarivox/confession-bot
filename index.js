@@ -7,6 +7,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  MessageFlags,
   Events,
 } from 'discord.js';
 import 'dotenv/config';
@@ -189,10 +190,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
   // ─── Accept contract button ─────────────────────────────────────────────────
   if (interaction.isButton() && interaction.customId === 'accept_contract') {
     if (isBanned(interaction.user.id)) {
-      return interaction.reply({ content: lang.banned, ephemeral: true });
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
     }
     if (hasConsented(interaction.user.id)) {
-      return interaction.reply({ content: lang.joinAlready, ephemeral: true });
+      return interaction.reply({ content: lang.joinAlready, flags: MessageFlags.Ephemeral });
     }
     addConsent(interaction.user.id);
     const confirmedEmbed = new EmbedBuilder()
@@ -210,7 +211,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const page      = parseInt(parts[2], 10);
 
     if (!playerlistSessions.has(sessionId)) {
-      return interaction.reply({ content: lang.playerlistExpired, ephemeral: true });
+      return interaction.reply({ content: lang.playerlistExpired, flags: MessageFlags.Ephemeral });
     }
 
     const ids        = getAllConsents();
@@ -229,11 +230,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!match) return;
 
     if (isBanned(interaction.user.id)) {
-      return interaction.reply({ content: lang.banned, ephemeral: true });
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
     }
 
     if (!hasConsented(interaction.user.id)) {
-      return interaction.reply({ content: lang.joinNotConsented, ephemeral: true });
+      return interaction.reply({ content: lang.joinNotConsented, flags: MessageFlags.Ephemeral });
     }
 
     const choice = match[1];
@@ -242,11 +243,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const result = vote(number, interaction.user.id, choice);
 
     if (result === 'already_voted') {
-      return interaction.reply({ content: lang.alreadyVoted, ephemeral: true });
+      return interaction.reply({ content: lang.alreadyVoted, flags: MessageFlags.Ephemeral });
     }
 
     if (result === 'not_found') {
-      return interaction.reply({ content: lang.confessionNotFound, ephemeral: true });
+      return interaction.reply({ content: lang.confessionNotFound, flags: MessageFlags.Ephemeral });
     }
 
     const { yes, no } = getVotes(number);
@@ -259,15 +260,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
   // ─── /confession ───────────────────────────────────────────────────────────
   if (interaction.commandName === 'confession') {
     if (interaction.inGuild()) {
-      return interaction.reply({ content: lang.dmOnly, ephemeral: true });
+      return interaction.reply({ content: lang.dmOnly, flags: MessageFlags.Ephemeral });
     }
 
     if (isBanned(interaction.user.id)) {
-      return interaction.reply({ content: lang.banned, ephemeral: true });
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
     }
 
     if (!hasConsented(interaction.user.id)) {
-      return interaction.reply({ content: lang.joinNotConsented, ephemeral: true });
+      return interaction.reply({ content: lang.joinNotConsented, flags: MessageFlags.Ephemeral });
     }
 
     const message  = interaction.options.getString('message');
@@ -276,19 +277,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const anonymous = !cmded;
 
     if (!message && !image) {
-      return interaction.reply({ content: lang.noContent, ephemeral: true });
+      return interaction.reply({ content: lang.noContent, flags: MessageFlags.Ephemeral });
     }
 
     // Cooldown check (each mode has its own independent cooldown, 0 = disabled)
     if (anonymous) {
       const remaining = getRemainingCooldown(interaction.user.id);
       if (remaining > 0) {
-        return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), ephemeral: true });
+        return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), flags: MessageFlags.Ephemeral });
       }
     } else {
       const remaining = getRemainingPublicCooldown(interaction.user.id);
       if (remaining > 0) {
-        return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), ephemeral: true });
+        return interaction.reply({ content: lang.cooldown(formatDuration(remaining)), flags: MessageFlags.Ephemeral });
       }
     }
 
@@ -296,15 +297,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
       confessionChannel = await client.channels.fetch(CONFESSION_CHANNEL_ID);
     } catch {
-      return interaction.reply({ content: lang.channelNotFound, ephemeral: true });
+      return interaction.reply({ content: lang.channelNotFound, flags: MessageFlags.Ephemeral });
     }
 
     if (!confessionChannel?.isTextBased()) {
-      return interaction.reply({ content: lang.invalidChannel, ephemeral: true });
+      return interaction.reply({ content: lang.invalidChannel, flags: MessageFlags.Ephemeral });
     }
 
     if (image && !image.contentType?.startsWith('image/')) {
-      return interaction.reply({ content: lang.invalidImage, ephemeral: true });
+      return interaction.reply({ content: lang.invalidImage, flags: MessageFlags.Ephemeral });
     }
 
     // Reserve the number atomically BEFORE posting so embed and JSON always match
@@ -344,7 +345,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         components: [buildVoteRow(nextNumber, 0, 0)],
       });
     } catch {
-      return interaction.reply({ content: lang.sendError, ephemeral: true });
+      return interaction.reply({ content: lang.sendError, flags: MessageFlags.Ephemeral });
     }
 
     // Save to JSON — if this fails, delete the orphaned Discord message
@@ -353,7 +354,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch (e) {
       console.error('[confession] Failed to save confession #' + nextNumber + ':', e.message);
       try { await posted.delete(); } catch {}
-      return interaction.reply({ content: lang.saveError, ephemeral: true });
+      return interaction.reply({ content: lang.saveError, flags: MessageFlags.Ephemeral });
     }
 
     if (anonymous) {
@@ -361,14 +362,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const delay = getDelay();
       await interaction.reply({
         content: delay > 0 ? lang.success(formatDuration(delay)) : lang.successNoDelay,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     } else {
       setLastPublicConfession(interaction.user.id);
       const publicDelay = getPublicDelay();
       await interaction.reply({
         content: publicDelay > 0 ? lang.success(formatDuration(publicDelay)) : lang.successReveal,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
   }
@@ -376,11 +377,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
   // ─── /join ─────────────────────────────────────────────────────────────────
   if (interaction.commandName === 'join') {
     if (isBanned(interaction.user.id)) {
-      return interaction.reply({ content: lang.banned, ephemeral: true });
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
     }
 
     if (hasConsented(interaction.user.id)) {
-      return interaction.reply({ content: lang.joinAlready, ephemeral: true });
+      return interaction.reply({ content: lang.joinAlready, flags: MessageFlags.Ephemeral });
     }
 
     const contractEmbed = new EmbedBuilder()
@@ -396,7 +397,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setStyle(ButtonStyle.Success),
     );
 
-    return interaction.reply({ embeds: [contractEmbed], components: [row], ephemeral: true });
+    return interaction.reply({ embeds: [contractEmbed], components: [row], flags: MessageFlags.Ephemeral });
   }
 
   // ─── /playerlist ───────────────────────────────────────────────────────────
@@ -458,7 +459,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   // ─── /admin ────────────────────────────────────────────────────────────────
   if (interaction.commandName === 'admin') {
     if (interaction.user.id !== ADMIN_ID) {
-      return interaction.reply({ content: lang.adminDenied, ephemeral: true });
+      return interaction.reply({ content: lang.adminDenied, flags: MessageFlags.Ephemeral });
     }
 
     const sub = interaction.options.getSubcommand();
@@ -467,7 +468,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const target = interaction.options.getUser('user');
       resetCooldown(target.id);
       resetPublicCooldown(target.id);
-      return interaction.reply({ content: lang.resetSuccess(target.username), ephemeral: true });
+      return interaction.reply({ content: lang.resetSuccess(target.username), flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'setdelay') {
@@ -477,7 +478,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (type === 'anonymous') setDelay(ms);
       else setPublicDelay(ms);
       const content = hours === 0 ? lang.delayDisabled(type) : lang.delaySuccess(hours, type);
-      return interaction.reply({ content, ephemeral: true });
+      return interaction.reply({ content, flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'delete') {
@@ -485,7 +486,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const deleted = deleteConfession(number);
 
       if (!deleted) {
-        return interaction.reply({ content: lang.deleteNotFound, ephemeral: true });
+        return interaction.reply({ content: lang.deleteNotFound, flags: MessageFlags.Ephemeral });
       }
 
       // Edit the Discord message to show it was removed — don't delete it
@@ -500,16 +501,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await msg.edit({ embeds: [deletedEmbed], components: [] });
       } catch { /* message unreachable, already gone */ }
 
-      return interaction.reply({ content: lang.deleteSuccess(number), ephemeral: true });
+      return interaction.reply({ content: lang.deleteSuccess(number), flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'wipe') {
       const confirm = interaction.options.getString('confirm');
       if (confirm !== 'RESET') {
-        return interaction.reply({ content: lang.resetAllWrongConfirm, ephemeral: true });
+        return interaction.reply({ content: lang.resetAllWrongConfirm, flags: MessageFlags.Ephemeral });
       }
 
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const all = getAll();
       let deleted = 0;
@@ -536,22 +537,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const deletePublic = interaction.options.getBoolean('delete_public') ?? false;
 
       if (!target && !rawId) {
-        return interaction.reply({ content: lang.banNoTarget, ephemeral: true });
+        return interaction.reply({ content: lang.banNoTarget, flags: MessageFlags.Ephemeral });
       }
 
       const userId   = target?.id ?? rawId;
       const username = target?.username ?? rawId;
 
       const ok = addBan(userId);
-      if (!ok) return interaction.reply({ content: lang.banAlready(username), ephemeral: true });
+      if (!ok) return interaction.reply({ content: lang.banAlready(username), flags: MessageFlags.Ephemeral });
       removeConsent(userId);
 
       if (!deletePublic) {
-        return interaction.reply({ content: lang.banSuccess(username), ephemeral: true });
+        return interaction.reply({ content: lang.banSuccess(username), flags: MessageFlags.Ephemeral });
       }
 
       // Delete all public confessions from this user
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const toDelete = getAll().filter(c => c.authorId === userId && !c.anonymous);
       let deleted = 0;
@@ -578,19 +579,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const target = interaction.options.getUser('user');
       const rawId  = interaction.options.getString('id');
       if (!target && !rawId) {
-        return interaction.reply({ content: lang.banNoTarget, ephemeral: true });
+        return interaction.reply({ content: lang.banNoTarget, flags: MessageFlags.Ephemeral });
       }
       const userId   = target?.id ?? rawId;
       const username = target?.username ?? rawId;
       const ok = removeBan(userId);
-      if (!ok) return interaction.reply({ content: lang.banNotFound(username), ephemeral: true });
-      return interaction.reply({ content: lang.unbanSuccess(username), ephemeral: true });
+      if (!ok) return interaction.reply({ content: lang.banNotFound(username), flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: lang.unbanSuccess(username), flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'banlist') {
       const ids = getAllBans();
       if (ids.length === 0) {
-        return interaction.reply({ content: lang.banlistEmpty, ephemeral: true });
+        return interaction.reply({ content: lang.banlistEmpty, flags: MessageFlags.Ephemeral });
       }
       const embed = new EmbedBuilder()
         .setColor(0xED4245)
@@ -598,21 +599,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setDescription(ids.map(id => `<@${id}>`).join('\n'))
         .setFooter({ text: `${ids.length} membre(s)` })
         .setTimestamp();
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'clearban') {
       const confirm = interaction.options.getString('confirm');
       if (confirm !== 'CLEARBAN') {
-        return interaction.reply({ content: lang.clearbanWrongConfirm, ephemeral: true });
+        return interaction.reply({ content: lang.clearbanWrongConfirm, flags: MessageFlags.Ephemeral });
       }
       const count = getAllBans().length;
       resetBans();
-      return interaction.reply({ content: lang.clearbanSuccess(count), ephemeral: true });
+      return interaction.reply({ content: lang.clearbanSuccess(count), flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'stats') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const all   = getAll();
       const week  = getSince(Date.now() - 7  * 86400000);
