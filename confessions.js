@@ -6,21 +6,33 @@ function load() {
   if (!existsSync(FILE)) return { count: 0, list: [] };
   try {
     return JSON.parse(readFileSync(FILE, 'utf-8'));
-  } catch {
+  } catch (e) {
+    console.error('[confessions] Corrupted JSON file, resetting:', e.message);
     return { count: 0, list: [] };
   }
 }
 
+// Atomic write: write to a temp file then rename to avoid partial writes on crash
 function save(data) {
+  const tmp = FILE + '.tmp';
+  writeFileSync(tmp, JSON.stringify(data, null, 2));
   writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-// Save a new confession and return its number
-export function saveConfession(messageId, channelId, authorId, anonymous = true) {
+// Reserve a confession number atomically — call this BEFORE posting the Discord message
+// so the embed number and the stored number always match
+export function reserveNumber() {
   const data = load();
   data.count += 1;
+  save(data);
+  return data.count;
+}
+
+// Save a confession using a pre-reserved number
+export function saveConfession(number, messageId, channelId, authorId, anonymous = true) {
+  const data = load();
   data.list.push({
-    number:    data.count,
+    number,
     messageId,
     channelId,
     authorId,
@@ -29,11 +41,12 @@ export function saveConfession(messageId, channelId, authorId, anonymous = true)
     votes: { yes: [], no: [] },
   });
   save(data);
-  return data.count;
 }
 
-// Register a vote — returns 'ok', 'already_voted', or 'not_found'
+// Register a vote — returns 'ok', 'already_voted', 'not_found', or 'invalid_choice'
 export function vote(number, userId, choice) {
+  if (choice !== 'yes' && choice !== 'no') return 'invalid_choice';
+
   const data = load();
   const confession = data.list.find(c => c.number === number);
   if (!confession) return 'not_found';

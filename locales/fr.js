@@ -7,6 +7,7 @@ export default {
   invalidChannel:  '❌ Le salon configuré n\'est pas un salon textuel valide.',
   invalidImage:    '❌ Le fichier joint n\'est pas une image valide.',
   sendError:       '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
+  saveError:       '❌ Erreur interne lors de l\'enregistrement. Réessaie dans quelques instants.',
   success:         (t) => `✅ Ta confession a été postée anonymement ! Tu pourras en poster une nouvelle dans **${t}**.`,
   successReveal:   `✅ Ta confession a été postée avec ton identité.`,
 

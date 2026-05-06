@@ -14,16 +14,17 @@ import {
   getRemainingCooldown,
   setLastConfession,
   resetCooldown,
+  resetAllCooldowns,
   getDelay,
   setDelay,
   formatDuration,
 } from './cooldowns.js';
 import {
+  reserveNumber,
   saveConfession,
   vote,
   getVotes,
   getConfession,
-  getCount,
   getAll,
   getSince,
   deleteConfession,
@@ -152,7 +153,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.invalidImage, ephemeral: true });
     }
 
-    const nextNumber = getCount() + 1;
+    // Reserve the number atomically BEFORE posting so embed and JSON always match
+    const nextNumber = reserveNumber();
 
     const titleText = anonymous
       ? `${lang.embedTitle} #${nextNumber}`
@@ -181,7 +183,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.sendError, ephemeral: true });
     }
 
-    saveConfession(posted.id, CONFESSION_CHANNEL_ID, interaction.user.id, anonymous);
+    // Save to JSON — if this fails, delete the orphaned Discord message
+    try {
+      saveConfession(nextNumber, posted.id, CONFESSION_CHANNEL_ID, interaction.user.id, anonymous);
+    } catch (e) {
+      console.error('[confession] Failed to save confession #' + nextNumber + ':', e.message);
+      try { await posted.delete(); } catch {}
+      return interaction.reply({ content: lang.saveError, ephemeral: true });
+    }
 
     if (anonymous) {
       setLastConfession(interaction.user.id);
@@ -289,6 +298,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       resetConfessions();
+      resetAllCooldowns();
 
       return interaction.editReply({ content: lang.resetAllSuccess(deleted) });
     }
@@ -304,7 +314,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const hourCounts = new Array(24).fill(0);
 
       for (const c of all) {
-        hourCounts[new Date(c.timestamp).getHours()]++;
+        hourCounts[new Date(c.timestamp).getUTCHours()]++;
         totalYes += c.votes?.yes?.length ?? 0;
         totalNo  += c.votes?.no?.length  ?? 0;
       }
@@ -326,7 +336,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           { name: '✅ Upvotes',     value: `${totalYes} (${posRatio}%)`,    inline: true },
           { name: '❌ Downvotes',   value: `${totalNo} (${100-posRatio}%)`, inline: true },
           { name: '📈 Avg/day',     value: `${avgPerDay}`,                  inline: true },
-          { name: '⏰ Peak hour',   value: `${peakHour}h–${peakHour+1}h`,  inline: true },
+          { name: '⏰ Peak hour (UTC)', value: `${peakHour}h–${peakHour+1}h`, inline: true },
         )
         .setTimestamp();
 

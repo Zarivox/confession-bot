@@ -45,7 +45,13 @@ export function setDelay(ms) {
   save(data);
 }
 
-// Format milliseconds into a human-readable string (e.g. "5h 30m 10s")
+export function resetAllCooldowns() {
+  const data = load();
+  data.users = {};
+  save(data);
+}
+
+// Formate les millisecondes en chaîne lisible (ex: "5h 30m 10s")
 export function formatDuration(ms) {
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
