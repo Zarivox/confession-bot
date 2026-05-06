@@ -116,19 +116,23 @@ On startup, the bot will:
 
 > Bans persist through `/admin wipe`. Use `/admin clearban` to wipe the ban list.
 
-## Customising text per instance
+## Customising per instance (private overrides)
 
-To override any locale string (contract text, success messages, embed titles…)
-without touching the public locale files:
+Two extension points let you keep instance-specific code and text out of the
+public repo. Both are **gitignored** — they stay on your VPS only.
 
-1. Copy `locales/private.example.js` to `locales/private.js`
-2. Edit `private.js` and define only the keys you want to override
-3. Restart the bot
+**Locale overrides** — `locales/private.js`
+Override any string from the active locale (contract text, embed titles, etc.).
+Copy `locales/private.example.js` to `locales/private.js`, edit, restart. Keys
+you don't define keep their default value.
 
-`locales/private.js` is **gitignored** — it stays on your VPS only and never
-ends up on GitHub. At startup the bot loads the active locale (`fr.js` / `en.js`),
-then merges any private overrides on top. Keys you don't define keep their
-default value. Useful for keeping server-specific contract text private.
+**Event handlers** — `private-handlers.js`
+Register your own Discord event listeners (custom DM commands, audit loggers,
+reactions, etc.). Copy `private-handlers.example.js` to `private-handlers.js`,
+edit, restart. The default export receives `{ client, lang }` and registers
+listeners on the client.
+
+If neither file exists, the bot starts normally with default behaviour.
 
 ## Required bot permissions
 
@@ -156,6 +160,7 @@ confession-bot/
 │   ├── fr.js             # French strings
 │   ├── en.js             # English strings
 │   └── private.example.js # Template for instance-specific overrides (private.js gitignored)
+├── private-handlers.example.js # Template for instance-specific event listeners (private-handlers.js gitignored)
 ├── setup.sh              # VPS setup helper
 ├── .github/workflows/    # GitHub Actions auto-deploy
 ├── package.json

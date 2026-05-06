@@ -64,9 +64,6 @@ export default {
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
   playerlistExpired: '❌ List expired, run `/playerlist` again.',
 
-  // Internal helper
-  authorResult:    (n, tag, id) => `🔍 Confession **#${n}** was posted by **${tag}** (<@${id}>)`,
-
   // /admin stats
   statsTitle:    '📊 Confession Statistics',
   statsTotal:    '📝 Total',

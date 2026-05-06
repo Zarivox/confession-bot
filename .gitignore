@@ -10,3 +10,6 @@ bans.json
 
 # Private locale overrides — instance-specific text (e.g. custom contract)
 locales/private.js
+
+# Private Discord event handlers — instance-specific listeners
+private-handlers.js

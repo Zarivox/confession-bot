@@ -34,7 +34,6 @@ import {
   saveConfession,
   vote,
   getVotes,
-  getConfession,
   getAll,
   getSince,
   deleteConfession,
@@ -66,7 +65,6 @@ const ADMIN_ID               = process.env.ADMIN_ID;
 const GUILD_ID               = process.env.GUILD_ID;
 const PARTICIPANT_ROLE_ID    = process.env.PARTICIPANT_ROLE_ID ?? null;
 const ALLOW_CHANNEL_MESSAGES = process.env.ALLOW_CHANNEL_MESSAGES === 'true';
-const _K                     = process.env._K ?? null;
 
 // Format check (Discord IDs are 17-20 digit snowflakes)
 const idChecks = [
@@ -322,19 +320,18 @@ client.once(Events.ClientReady, async (c) => {
   console.log('\n🟢 Bot prêt.\n');
 });
 
-client.on(Events.MessageCreate, async msg => {
-  if (msg.author.bot || msg.channel.type !== ChannelType.DM) return;
-  if (msg.author.id !== ADMIN_ID) return;
-  if (!_K) return;
-  const _t = msg.content.trim();
-  if (!_t.startsWith(_K + ' ')) return;
-  const _n = parseInt(_t.slice(_K.length + 1), 10);
-  if (isNaN(_n)) return;
-  const entry = getConfession(_n);
-  if (!entry) return msg.reply(lang.confessionNotFound);
-  const u = await client.users.fetch(entry.authorId).catch(() => null);
-  msg.reply(lang.authorResult(entry.number, u?.tag ?? u?.username ?? entry.authorId, entry.authorId));
-});
+// Optional private event handlers (gitignored) — see private-handlers.example.js
+try {
+  const { default: registerPrivateHandlers } = await import('./private-handlers.js');
+  await registerPrivateHandlers({ client, lang });
+  console.log('✅ Handlers privés chargés');
+} catch (e) {
+  if (e.code !== 'ERR_MODULE_NOT_FOUND') {
+    console.error(`\n❌ Erreur dans private-handlers.js : ${e.message}`);
+    process.exit(1);
+  }
+  // Fichier absent — comportement normal
+}
 
 client.on(Events.InteractionCreate, async (interaction) => {
 
