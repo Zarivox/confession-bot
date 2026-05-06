@@ -198,6 +198,15 @@ try {
   // Fichier absent — on utilise la locale par défaut
 }
 
+// Sanity check : les clés critiques doivent être des chaînes non-vides après merge
+const REQUIRED_LANG_KEYS = ['joinAcceptPhrase', 'joinModalTitle', 'joinModalLabel', 'joinButton', 'joinContractTitle', 'joinContractDesc'];
+const brokenKeys = REQUIRED_LANG_KEYS.filter(k => typeof lang[k] !== 'string' || lang[k].trim().length === 0);
+if (brokenKeys.length > 0) {
+  console.error(`\n❌ Clés de locale manquantes ou vides : ${brokenKeys.join(', ')}`);
+  console.error('Vérifie tes fichiers locales/*.js et locales/private.js.\n');
+  process.exit(1);
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -586,6 +595,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   // ─── /contrat ──────────────────────────────────────────────────────────────
   if (interaction.commandName === 'contrat') {
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
+    }
     const contractEmbed = new EmbedBuilder()
       .setColor(0xE8C547)
       .setTitle(lang.joinContractTitle)
@@ -916,7 +928,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         )
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
   }
 });
