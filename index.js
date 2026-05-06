@@ -33,6 +33,7 @@ import {
 
 const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID              = process.env.ADMIN_ID;
+const GUILD_ID              = process.env.GUILD_ID;
 
 const lang = (await import(`./locales/${process.env.LANG === 'fr' ? 'fr' : 'en'}.js`)).default;
 
@@ -168,7 +169,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (anonymous) {
       embed.setFooter({ text: lang.embedFooter });
     } else {
-      embed.setFooter({ text: lang.embedFooterPublic, iconURL: interaction.user.displayAvatarURL({ size: 64 }) });
+      // Fetch server nickname — falls back to global username if none
+      let displayName = interaction.user.username;
+      try {
+        const guild  = await client.guilds.fetch(GUILD_ID);
+        const member = await guild.members.fetch(interaction.user.id);
+        displayName  = member.displayName;
+      } catch { /* DM-only user or fetch failed, keep username */ }
+
+      embed.setFooter({ text: displayName, iconURL: interaction.user.displayAvatarURL({ size: 64 }) });
       embed.addFields({ name: lang.postedBy, value: `<@${interaction.user.id}>`, inline: true });
     }
 
