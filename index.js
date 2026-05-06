@@ -41,11 +41,8 @@ const CONFESSION_CHANNEL_ID = process.env.CONFESSION_CHANNEL_ID;
 const ADMIN_ID              = process.env.ADMIN_ID;
 const GUILD_ID              = process.env.GUILD_ID;
 
-// ─── Playerlist pagination sessions ──────────────────────────────────────────
+// ─── Playerlist pagination (stateless — page number encoded in customId) ─────
 const PLAYERLIST_PAGE_SIZE = 15;
-const PLAYERLIST_TTL       = 5 * 60 * 1000; // 5 minutes
-const playerlistSessions   = new Map();
-// { sessionId → { ids, page, timeoutHandle } }
 
 function buildPlayerlistEmbed(ids, page) {
   const totalPages = Math.ceil(ids.length / PLAYERLIST_PAGE_SIZE);
@@ -58,15 +55,15 @@ function buildPlayerlistEmbed(ids, page) {
     .setTimestamp();
 }
 
-function buildPlayerlistRow(sessionId, page, totalPages) {
+function buildPlayerlistRow(page, totalPages) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`pl_p_${sessionId}`)
+      .setCustomId(`pl_${page - 1}`)
       .setLabel('◀')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(page === 0),
     new ButtonBuilder()
-      .setCustomId(`pl_n_${sessionId}`)
+      .setCustomId(`pl_${page + 1}`)
       .setLabel('▶')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(page >= totalPages - 1),
@@ -144,21 +141,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   // ─── Playerlist pagination buttons ─────────────────────────────────────────
-  if (interaction.isButton() && /^pl_[pn]_/.test(interaction.customId)) {
-    const [, dir, sessionId] = interaction.customId.split('_');
-    const session = playerlistSessions.get(sessionId);
-
-    if (!session) {
-      return interaction.reply({ content: lang.playerlistExpired, ephemeral: true });
-    }
-
-    const totalPages = Math.ceil(session.ids.length / PLAYERLIST_PAGE_SIZE);
-    if (dir === 'p') session.page = Math.max(0, session.page - 1);
-    else             session.page = Math.min(totalPages - 1, session.page + 1);
+  if (interaction.isButton() && /^pl_-?\d+$/.test(interaction.customId)) {
+    const page = parseInt(interaction.customId.split('_')[1], 10);
+    const ids  = getAllConsents();
+    const totalPages = Math.ceil(ids.length / PLAYERLIST_PAGE_SIZE);
 
     return interaction.update({
-      embeds:     [buildPlayerlistEmbed(session.ids, session.page)],
-      components: totalPages > 1 ? [buildPlayerlistRow(sessionId, session.page, totalPages)] : [],
+      embeds:     [buildPlayerlistEmbed(ids, Math.min(page, totalPages - 1))],
+      components: totalPages > 1 ? [buildPlayerlistRow(Math.min(page, totalPages - 1), totalPages)] : [],
     });
   }
 
@@ -326,22 +316,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const totalPages = Math.ceil(ids.length / PLAYERLIST_PAGE_SIZE);
 
-    if (totalPages <= 1) {
-      // No pagination needed
-      return interaction.editReply({ embeds: [buildPlayerlistEmbed(ids, 0)] });
-    }
-
-    // Create a session for pagination
-    const sessionId = Date.now().toString(36);
-    const timeoutHandle = setTimeout(() => {
-      playerlistSessions.delete(sessionId);
-    }, PLAYERLIST_TTL);
-
-    playerlistSessions.set(sessionId, { ids, page: 0, timeoutHandle });
-
     return interaction.editReply({
       embeds:     [buildPlayerlistEmbed(ids, 0)],
-      components: [buildPlayerlistRow(sessionId, 0, totalPages)],
+      components: totalPages > 1 ? [buildPlayerlistRow(0, totalPages)] : [],
     });
   }
 
