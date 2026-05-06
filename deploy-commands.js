@@ -19,6 +19,22 @@ const confessionCommand = new SlashCommandBuilder()
       .setRequired(false)
   );
 
+const topCommand = new SlashCommandBuilder()
+  .setName('top')
+  .setDescription('Show the most upvoted confessions')
+  .setDMPermission(false)
+  .addStringOption(option =>
+    option
+      .setName('période')
+      .setDescription('Time period to filter by')
+      .setRequired(false)
+      .addChoices(
+        { name: 'This week',  value: 'week'  },
+        { name: 'This month', value: 'month' },
+        { name: 'All time',   value: 'all'   },
+      )
+  );
+
 const adminCommand = new SlashCommandBuilder()
   .setName('admin')
   .setDescription('Admin commands for managing confessions')
@@ -43,6 +59,11 @@ const adminCommand = new SlashCommandBuilder()
           .setMinValue(0.1)
           .setMaxValue(168)
       )
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('stats')
+      .setDescription('Show confession statistics')
   );
 
 const rest = new REST().setToken(process.env.BOT_TOKEN);
@@ -56,10 +77,10 @@ try {
     { body: [confessionCommand.toJSON()] }
   );
 
-  // /admin — guild command (instant update, server only)
+  // /top and /admin — guild commands (instant update, server only)
   await rest.put(
     Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-    { body: [adminCommand.toJSON()] }
+    { body: [topCommand.toJSON(), adminCommand.toJSON()] }
   );
 
   console.log('Commands deployed successfully!');
