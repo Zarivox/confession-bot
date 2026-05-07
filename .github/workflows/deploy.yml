@@ -23,6 +23,7 @@ jobs:
             cd /root/confession-bot &&
             git pull &&
             npm install --omit=dev &&
+            node deploy-commands.js &&
             pm2 startOrRestart ecosystem.config.cjs --update-env &&
             pm2 save
           "
