@@ -536,7 +536,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
       // Discord ne sait pas embed les vidéos uploadées par les users → on
       // skip l'embed pour éviter le layout moche (petit embed sous grosse
       // vidéo). Le titre passe en contenu de message brut.
-      let content = `**${titleText}**`;
+      // Petit indicateur visuel pour compenser l'absence de la barre de
+      // couleur de l'embed : 🟡 = anonyme, 🔵 = public.
+      const indicator = anonymous ? '🟡' : '🔵';
+      let content = `${indicator} **${titleText}**`;
       if (!anonymous) content += `\n${lang.postedBy} : <@${interaction.user.id}>`;
       if (message)    content += `\n\n${message}`;
       sendPayload = { content, files };
