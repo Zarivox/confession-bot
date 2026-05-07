@@ -68,8 +68,11 @@ export default {
   helpTitle:           '📖 Aide — Commandes Confessions',
   helpFieldDmName:     '📩 En **MP** avec le bot',
   helpFieldDmValue: [
-    '`/confession [message] [image]` — Poster une confession **anonyme**',
-    '`/confession reveal:true` — Poster avec ton identité',
+    '`/confession` — Poster une confession (**anonyme par défaut**)',
+    '  ↳ `message:` *(texte)* — au moins `message` **ou** `image`',
+    '  ↳ `image:` *(fichier)* — image à joindre',
+    '  ↳ `reveal:true` *(optionnel)* — poster avec ton identité',
+    '',
     '`/join` — Signer le contrat (obligatoire avant de poster)',
     '`/contrat` — Relire le contrat',
     '`/help` — Afficher ce menu',

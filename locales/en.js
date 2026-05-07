@@ -68,8 +68,11 @@ export default {
   helpTitle:           '📖 Help — Confession Commands',
   helpFieldDmName:     '📩 In **DM** with the bot',
   helpFieldDmValue: [
-    '`/confession [message] [image]` — Post an **anonymous** confession',
-    '`/confession reveal:true` — Post with your identity',
+    '`/confession` — Post a confession (**anonymous by default**)',
+    '  ↳ `message:` *(text)* — at least `message` **or** `image`',
+    '  ↳ `image:` *(file)* — image to attach',
+    '  ↳ `reveal:true` *(optional)* — post with your identity',
+    '',
     '`/join` — Sign the contract (required before posting)',
     '`/contrat` — Re-read the contract',
     '`/help` — Show this menu',
