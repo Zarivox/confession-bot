@@ -6,28 +6,34 @@ A Discord bot that lets users send anonymous (or identified) confessions to a de
 
 - Anonymous confessions posted via DM (no one sees who posted)
 - Optional non-anonymous mode (`reveal:true`) — shows identity, separate cooldown
-- Independent configurable cooldowns for anonymous and public confessions (0 = disabled)
+- **Image or video attachment** support via single `fichier` option (auto-detected)
+- Files are re-uploaded by the bot to bypass Discord's 24h CDN URL expiry
+- Independent configurable cooldowns for anonymous and public confessions (0 = disabled, hours + minutes combinable)
+- `/cooldown` — DM command for users to check their remaining cooldowns
 - ✅/❌ vote buttons on each confession
-- Opt-in consent system (`/join`) with contract before first use
+- Opt-in consent system (`/join`) — **modal-based contract signature** (type the exact phrase to sign)
 - Discord role auto-assigned on consent — controls channel visibility
 - Channel permission auto-fix on startup (`@everyone` denied, role allowed)
 - Ban system (with optional public confession cleanup)
 - `/top` leaderboard by votes (week / month / all time)
 - `/playerlist` — paginated list of members who signed the contract
-- Full admin panel (`/admin`) — bans, cooldowns, stats, delete, wipe
+- Full admin panel (`/admin`) — bans, cooldowns, stats, delete, wipe, info
+- **Dynamic custom status** under the bot name showing live participant count
 - Multilingual (`LANG=fr` or `LANG=en`)
+- Private extension points (`locales/private.js` + `private-handlers.js`) — gitignored, instance-specific
 - Atomic JSON writes with corruption backup
 - Startup validation: bot won't start if any ID is wrong
-- Auto-deploy on push via GitHub Actions
+- Auto-deploy on push via GitHub Actions (registers slash commands automatically)
 
 ## How it works
 
-1. A user runs `/join` and signs the participation contract
+1. A user runs `/join` and signs the participation contract via modal (types the exact accept phrase)
 2. The bot assigns a "Participant" role → grants channel visibility
-3. They open a **DM with the bot** and run `/confession`
-4. The bot posts the confession in the configured channel
+3. They open a **DM with the bot** and run `/confession` (with optional text, image, or video)
+4. The bot posts the confession in the configured channel (videos use a clean text layout, images use an embed)
 5. Server members can vote with ✅ or ❌
 6. The author gets a private confirmation
+7. They can run `/cooldown` in DM at any time to see how long until they can post again
 
 > `/confession` is blocked in server channels — it only works in **DMs**.
 
@@ -71,8 +77,9 @@ Create a `.env` file at the root based on `.env.example`:
 npm run deploy
 ```
 
-> Global commands (`/confession`, `/join`, `/contrat`, `/help`) may take up to 1 hour to appear.
+> Global commands (`/confession`, `/join`, `/contrat`, `/help`, `/cooldown`) may take up to 1 hour to appear on first registration.
 > Guild commands (`/top`, `/admin`, `/playerlist`) update instantly.
+> The GitHub Actions deploy workflow runs `node deploy-commands.js` automatically on each push, so adding/editing a command only requires a git push.
 
 ### 4. Start the bot
 
@@ -93,10 +100,11 @@ On startup, the bot will:
 | Command | Where | Description |
 |---|---|---|
 | `/help` | Server or DM | Show all available commands and how to use them |
-| `/join` | Server or DM | Sign the participation contract (required before posting) |
+| `/join` | Server or DM | Sign the participation contract via modal (required before posting) |
 | `/contrat` | Server or DM | Read the participation contract at any time (read-only) |
-| `/confession` | DM only | Post an anonymous confession |
-| `/confession reveal:true` | DM only | Post a confession with your identity |
+| `/confession message:... fichier:... ` | DM only | Post an anonymous confession (text and/or image/video) |
+| `/confession reveal:true` | DM only | Post a confession with your identity (separate cooldown) |
+| `/cooldown` | DM only | Show your remaining anonymous + public cooldowns |
 | `/top période:...` | Server | Show the most upvoted confessions (week/month/all) |
 
 ### Admin commands
@@ -104,7 +112,7 @@ On startup, the bot will:
 | Command | Description |
 |---|---|
 | `/admin reset @user` | Reset a user's cooldowns (anonymous + public) |
-| `/admin setdelay type:... hours:X` | Change cooldown for `Anonymous` or `Public` (0 = disabled) |
+| `/admin setdelay type:... [hours:X] [minutes:Y]` | Change cooldown for `Anonymous` or `Public` (combine hours+minutes; both 0 = disabled) |
 | `/admin stats` | Show confession statistics |
 | `/admin delete number:X` | Delete a confession by number (edits embed to "deleted") |
 | `/admin wipe confirm:RESET` | Delete ALL confessions, cooldowns, consents — restarts at #1 |
