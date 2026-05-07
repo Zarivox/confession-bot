@@ -530,44 +530,50 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ? `${lang.embedTitle} #${nextNumber}`
       : `${lang.embedTitlePublic} #${nextNumber}`;
 
-    const embed = new EmbedBuilder()
-      .setColor(anonymous ? 0xE8C547 : 0x5865F2)
-      .setTitle(titleText)
-      .setTimestamp();
-
-    if (anonymous) {
-      embed.setFooter({ text: lang.embedFooter });
-    } else {
-      // Fetch server nickname — falls back to global username if none
-      let displayName = interaction.user.username;
-      try {
-        const guild  = await client.guilds.fetch(GUILD_ID);
-        const member = await guild.members.fetch(interaction.user.id);
-        displayName  = member.displayName;
-      } catch { /* DM-only user or fetch failed, keep username */ }
-
-      embed.setFooter({ text: displayName, iconURL: interaction.user.displayAvatarURL({ size: 128 }) });
-      embed.addFields({ name: lang.postedBy, value: `<@${interaction.user.id}>`, inline: true });
-    }
-
-    if (message) embed.setDescription(message);
-
     // Re-upload des fichiers pour éviter l'expiration des URLs Discord (24h depuis 2024).
-    // Image → embed via attachment://, Video → attachment séparée jouable.
     const files = [];
-    if (image) {
-      files.push(new AttachmentBuilder(image.url, { name: image.name }));
-      embed.setImage(`attachment://${image.name}`);
-    }
+    if (image) files.push(new AttachmentBuilder(image.url, { name: image.name }));
+    if (video) files.push(new AttachmentBuilder(video.url, { name: video.name }));
+
+    let sendPayload;
     if (video) {
-      files.push(new AttachmentBuilder(video.url, { name: video.name }));
+      // Discord ne sait pas embed les vidéos uploadées par les users → on
+      // skip l'embed pour éviter le layout moche (petit embed sous grosse
+      // vidéo). Le titre passe en contenu de message brut.
+      let content = `**${titleText}**`;
+      if (!anonymous) content += `\n${lang.postedBy} : <@${interaction.user.id}>`;
+      if (message)    content += `\n\n${message}`;
+      sendPayload = { content, files };
+    } else {
+      // Flow embed standard (texte seul ou image seule)
+      const embed = new EmbedBuilder()
+        .setColor(anonymous ? 0xE8C547 : 0x5865F2)
+        .setTitle(titleText)
+        .setTimestamp();
+
+      if (anonymous) {
+        embed.setFooter({ text: lang.embedFooter });
+      } else {
+        let displayName = interaction.user.username;
+        try {
+          const guild  = await client.guilds.fetch(GUILD_ID);
+          const member = await guild.members.fetch(interaction.user.id);
+          displayName  = member.displayName;
+        } catch { /* DM-only user ou fetch raté */ }
+        embed.setFooter({ text: displayName, iconURL: interaction.user.displayAvatarURL({ size: 128 }) });
+        embed.addFields({ name: lang.postedBy, value: `<@${interaction.user.id}>`, inline: true });
+      }
+
+      if (message) embed.setDescription(message);
+      if (image)   embed.setImage(`attachment://${image.name}`);
+
+      sendPayload = { embeds: [embed], files };
     }
 
     let posted;
     try {
       posted = await confessionChannel.send({
-        embeds:     [embed],
-        files,
+        ...sendPayload,
         components: [buildVoteRow(nextNumber, 0, 0)],
       });
     } catch {
@@ -749,7 +755,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return interaction.reply({ content: lang.deleteNotFound, flags: MessageFlags.Ephemeral });
       }
 
-      // Edit the Discord message to show it was removed — don't delete it
+      // Edit the Discord message to show it was removed — clear content,
+      // attachments (videos/images), and components, then show a "deleted" embed
       try {
         const ch  = await client.channels.fetch(deleted.channelId);
         const msg = await ch.messages.fetch(deleted.messageId);
@@ -758,7 +765,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setTitle(`🗑️ Confession #${number}`)
           .setDescription(lang.deletedEmbedDesc)
           .setTimestamp();
-        await msg.edit({ embeds: [deletedEmbed], components: [] });
+        await msg.edit({ content: '', embeds: [deletedEmbed], components: [], attachments: [] });
       } catch { /* message unreachable, already gone */ }
 
       return interaction.reply({ content: lang.deleteSuccess(number), flags: MessageFlags.Ephemeral });
@@ -841,7 +848,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             .setTitle(`🗑️ Confession #${confession.number}`)
             .setDescription(lang.deletedEmbedDesc)
             .setTimestamp();
-          await msg.edit({ embeds: [deletedEmbed], components: [] });
+          await msg.edit({ content: '', embeds: [deletedEmbed], components: [], attachments: [] });
           deleted++;
         } catch { /* message unreachable or already gone */ }
       }
