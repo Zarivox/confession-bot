@@ -1,11 +1,12 @@
 export default {
   // /confession
   dmOnly:          '❌ This command can only be used in **direct messages** with me.',
-  noContent:       '❌ You must provide at least a message or an image.',
+  noContent:       '❌ You must provide at least a message, an image or a video.',
   cooldown:        (t) => `⏳ You need to wait **${t}** before posting a new confession.`,
   channelNotFound: '❌ The confession channel could not be found. Please contact an administrator.',
   invalidChannel:  '❌ The configured channel is not a valid text channel.',
   invalidImage:    '❌ The attached file is not a valid image.',
+  invalidVideo:    '❌ The attached file is not a valid video.',
   sendError:       '❌ Failed to send your confession. Check the bot permissions in the channel.',
   saveError:       '❌ Internal error while saving. Please try again in a moment.',
   success:         (t) => `✅ Your confession has been posted anonymously! You can post again in **${t}**.`,
@@ -69,8 +70,9 @@ export default {
   helpFieldDmName:     '📩 In **DM** with the bot',
   helpFieldDmValue: [
     '`/confession` — Post a confession (**anonymous by default**)',
-    '  ↳ `message:` *(text)* — at least `message` **or** `image`',
+    '  ↳ `message:` *(text)* — at least **one** of three (`message`, `image` or `video`)',
     '  ↳ `image:` *(file)* — image to attach',
+    '  ↳ `video:` *(file)* — video to attach',
     '  ↳ `reveal:true` *(optional)* — post with your identity',
     '',
     '`/join` — Sign the contract (required before posting)',

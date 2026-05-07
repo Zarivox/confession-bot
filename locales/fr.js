@@ -1,11 +1,12 @@
 export default {
   // /confession
   dmOnly:          '❌ Cette commande ne peut être utilisée **qu\'en message privé** avec moi.',
-  noContent:       '❌ Tu dois fournir au moins un message ou une image.',
+  noContent:       '❌ Tu dois fournir au moins un message, une image ou une vidéo.',
   cooldown:        (t) => `⏳ Tu dois attendre encore **${t}** avant de poster une nouvelle confession.`,
   channelNotFound: '❌ Le salon des confessions est introuvable. Contacte un administrateur.',
   invalidChannel:  '❌ Le salon configuré n\'est pas un salon textuel valide.',
   invalidImage:    '❌ Le fichier joint n\'est pas une image valide.',
+  invalidVideo:    '❌ Le fichier joint n\'est pas une vidéo valide.',
   sendError:       '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
   saveError:       '❌ Erreur interne lors de l\'enregistrement. Réessaie dans quelques instants.',
   success:         (t) => `✅ Ta confession a été postée anonymement ! Tu pourras en poster une nouvelle dans **${t}**.`,
@@ -69,8 +70,9 @@ export default {
   helpFieldDmName:     '📩 En **MP** avec le bot',
   helpFieldDmValue: [
     '`/confession` — Poster une confession (**anonyme par défaut**)',
-    '  ↳ `message:` *(texte)* — au moins `message` **ou** `image`',
+    '  ↳ `message:` *(texte)* — au moins **un** des trois (`message`, `image` ou `video`)',
     '  ↳ `image:` *(fichier)* — image à joindre',
+    '  ↳ `video:` *(fichier)* — vidéo à joindre',
     '  ↳ `reveal:true` *(optionnel)* — poster avec ton identité',
     '',
     '`/join` — Signer le contrat (obligatoire avant de poster)',

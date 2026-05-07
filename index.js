@@ -10,6 +10,7 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  AttachmentBuilder,
   MessageFlags,
   PermissionFlagsBits,
   Events,
@@ -465,12 +466,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.joinNotConsented, flags: MessageFlags.Ephemeral });
     }
 
-    const message  = interaction.options.getString('message');
-    const image    = interaction.options.getAttachment('image');
-    const revealed = interaction.options.getBoolean('reveal') ?? false;
+    const message   = interaction.options.getString('message');
+    const image     = interaction.options.getAttachment('image');
+    const video     = interaction.options.getAttachment('video');
+    const revealed  = interaction.options.getBoolean('reveal') ?? false;
     const anonymous = !cmded;
 
-    if (!message && !image) {
+    if (!message && !image && !video) {
       return interaction.reply({ content: lang.noContent, flags: MessageFlags.Ephemeral });
     }
 
@@ -501,6 +503,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (image && !image.contentType?.startsWith('image/')) {
       return interaction.reply({ content: lang.invalidImage, flags: MessageFlags.Ephemeral });
     }
+    if (video && !video.contentType?.startsWith('video/')) {
+      return interaction.reply({ content: lang.invalidVideo, flags: MessageFlags.Ephemeral });
+    }
 
     // Reserve the number atomically BEFORE posting so embed and JSON always match
     const nextNumber = reserveNumber();
@@ -530,12 +535,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (message) embed.setDescription(message);
-    if (image)   embed.setImage(image.url);
+
+    // Re-upload des fichiers pour éviter l'expiration des URLs Discord (24h depuis 2024).
+    // Image → embed via attachment://, Video → attachment séparée jouable.
+    const files = [];
+    if (image) {
+      files.push(new AttachmentBuilder(image.url, { name: image.name }));
+      embed.setImage(`attachment://${image.name}`);
+    }
+    if (video) {
+      files.push(new AttachmentBuilder(video.url, { name: video.name }));
+    }
 
     let posted;
     try {
       posted = await confessionChannel.send({
         embeds:     [embed],
+        files,
         components: [buildVoteRow(nextNumber, 0, 0)],
       });
     } catch {
