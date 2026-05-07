@@ -1,12 +1,11 @@
 export default {
   // /confession
   dmOnly:          '❌ Cette commande ne peut être utilisée **qu\'en message privé** avec moi.',
-  noContent:       '❌ Tu dois fournir au moins un message, une image ou une vidéo.',
+  noContent:       '❌ Tu dois fournir au moins un message ou un fichier (image/vidéo).',
   cooldown:        (t) => `⏳ Tu dois attendre encore **${t}** avant de poster une nouvelle confession.`,
   channelNotFound: '❌ Le salon des confessions est introuvable. Contacte un administrateur.',
   invalidChannel:  '❌ Le salon configuré n\'est pas un salon textuel valide.',
-  invalidImage:    '❌ Le fichier joint n\'est pas une image valide.',
-  invalidVideo:    '❌ Le fichier joint n\'est pas une vidéo valide.',
+  invalidFile:     '❌ Le fichier joint doit être une **image** ou une **vidéo**.',
   fileTooLarge:    (size, max) => `❌ Fichier trop lourd : **${size} MB**. Limite sur ce serveur : **${max} MB**. Compresse ton fichier ou booste le serveur pour augmenter la limite.`,
   sendError:       '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
   saveError:       '❌ Erreur interne lors de l\'enregistrement. Réessaie dans quelques instants.',
@@ -71,9 +70,8 @@ export default {
   helpFieldDmName:     '📩 En **MP** avec le bot',
   helpFieldDmValue: [
     '`/confession` — Poster une confession (**anonyme par défaut**)',
-    '  ↳ `message:` *(texte)* — au moins **un** des trois (`message`, `image` ou `video`)',
-    '  ↳ `image:` *(fichier)* — image à joindre',
-    '  ↳ `video:` *(fichier)* — vidéo à joindre',
+    '  ↳ `message:` *(texte)* — au moins `message` **ou** `fichier`',
+    '  ↳ `fichier:` *(image ou vidéo)* — joindre une image ou une vidéo',
     '  ↳ `reveal:true` *(optionnel)* — poster avec ton identité',
     '',
     '`/join` — Signer le contrat (obligatoire avant de poster)',

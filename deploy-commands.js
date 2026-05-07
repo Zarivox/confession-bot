@@ -15,14 +15,8 @@ const confessionCommand = new SlashCommandBuilder()
   )
   .addAttachmentOption(option =>
     option
-      .setName('image')
-      .setDescription('Optional image to attach to your confession')
-      .setRequired(false)
-  )
-  .addAttachmentOption(option =>
-    option
-      .setName('video')
-      .setDescription('Optional video to attach to your confession')
+      .setName('fichier')
+      .setDescription('Image or video to attach (optional)')
       .setRequired(false)
   )
   .addBooleanOption(option =>

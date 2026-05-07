@@ -467,13 +467,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     const message   = interaction.options.getString('message');
-    const image     = interaction.options.getAttachment('image');
-    const video     = interaction.options.getAttachment('video');
+    const file      = interaction.options.getAttachment('fichier');
     const revealed  = interaction.options.getBoolean('reveal') ?? false;
     const anonymous = !cmded;
 
-    if (!message && !image && !video) {
+    if (!message && !file) {
       return interaction.reply({ content: lang.noContent, flags: MessageFlags.Ephemeral });
+    }
+
+    // Détection auto du type via contentType (Discord nous le donne)
+    const isImage = file?.contentType?.startsWith('image/') ?? false;
+    const isVideo = file?.contentType?.startsWith('video/') ?? false;
+    if (file && !isImage && !isVideo) {
+      return interaction.reply({ content: lang.invalidFile, flags: MessageFlags.Ephemeral });
     }
 
     // Cooldown check (each mode has its own independent cooldown, 0 = disabled)
@@ -500,22 +506,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.invalidChannel, flags: MessageFlags.Ephemeral });
     }
 
-    if (image && !image.contentType?.startsWith('image/')) {
-      return interaction.reply({ content: lang.invalidImage, flags: MessageFlags.Ephemeral });
-    }
-    if (video && !video.contentType?.startsWith('video/')) {
-      return interaction.reply({ content: lang.invalidVideo, flags: MessageFlags.Ephemeral });
-    }
-
     // Check upload size against server's max (varies by boost tier)
-    const totalBytes = (image?.size ?? 0) + (video?.size ?? 0);
-    if (totalBytes > 0) {
-      const guild   = await client.guilds.fetch(GUILD_ID);
-      const tier    = guild.premiumTier ?? 0;
-      const maxMB   = tier >= 3 ? 100 : tier >= 2 ? 50 : 10;
+    if (file) {
+      const guild    = await client.guilds.fetch(GUILD_ID);
+      const tier     = guild.premiumTier ?? 0;
+      const maxMB    = tier >= 3 ? 100 : tier >= 2 ? 50 : 10;
       const maxBytes = maxMB * 1024 * 1024;
-      if (totalBytes > maxBytes) {
-        const sizeMB = (totalBytes / 1024 / 1024).toFixed(1);
+      if (file.size > maxBytes) {
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
         return interaction.reply({
           content: lang.fileTooLarge(sizeMB, maxMB),
           flags: MessageFlags.Ephemeral,
@@ -530,13 +528,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ? `${lang.embedTitle} #${nextNumber}`
       : `${lang.embedTitlePublic} #${nextNumber}`;
 
-    // Re-upload des fichiers pour éviter l'expiration des URLs Discord (24h depuis 2024).
-    const files = [];
-    if (image) files.push(new AttachmentBuilder(image.url, { name: image.name }));
-    if (video) files.push(new AttachmentBuilder(video.url, { name: video.name }));
+    // Re-upload du fichier pour éviter l'expiration des URLs Discord (24h depuis 2024).
+    const files = file ? [new AttachmentBuilder(file.url, { name: file.name })] : [];
 
     let sendPayload;
-    if (video) {
+    if (isVideo) {
       // Discord ne sait pas embed les vidéos uploadées par les users → on
       // skip l'embed pour éviter le layout moche (petit embed sous grosse
       // vidéo). Le titre passe en contenu de message brut.
@@ -565,7 +561,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       if (message) embed.setDescription(message);
-      if (image)   embed.setImage(`attachment://${image.name}`);
+      if (isImage) embed.setImage(`attachment://${file.name}`);
 
       sendPayload = { embeds: [embed], files };
     }

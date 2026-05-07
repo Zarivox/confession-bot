@@ -1,12 +1,11 @@
 export default {
   // /confession
   dmOnly:          '❌ This command can only be used in **direct messages** with me.',
-  noContent:       '❌ You must provide at least a message, an image or a video.',
+  noContent:       '❌ You must provide at least a message or a file (image/video).',
   cooldown:        (t) => `⏳ You need to wait **${t}** before posting a new confession.`,
   channelNotFound: '❌ The confession channel could not be found. Please contact an administrator.',
   invalidChannel:  '❌ The configured channel is not a valid text channel.',
-  invalidImage:    '❌ The attached file is not a valid image.',
-  invalidVideo:    '❌ The attached file is not a valid video.',
+  invalidFile:     '❌ The attached file must be an **image** or a **video**.',
   fileTooLarge:    (size, max) => `❌ File too large: **${size} MB**. Server limit: **${max} MB**. Compress the file or boost the server to raise the limit.`,
   sendError:       '❌ Failed to send your confession. Check the bot permissions in the channel.',
   saveError:       '❌ Internal error while saving. Please try again in a moment.',
@@ -71,9 +70,8 @@ export default {
   helpFieldDmName:     '📩 In **DM** with the bot',
   helpFieldDmValue: [
     '`/confession` — Post a confession (**anonymous by default**)',
-    '  ↳ `message:` *(text)* — at least **one** of three (`message`, `image` or `video`)',
-    '  ↳ `image:` *(file)* — image to attach',
-    '  ↳ `video:` *(file)* — video to attach',
+    '  ↳ `message:` *(text)* — at least `message` **or** `fichier`',
+    '  ↳ `fichier:` *(image or video)* — attach an image or a video',
     '  ↳ `reveal:true` *(optional)* — post with your identity',
     '',
     '`/join` — Sign the contract (required before posting)',
