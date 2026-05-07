@@ -13,6 +13,7 @@ import {
   AttachmentBuilder,
   MessageFlags,
   PermissionFlagsBits,
+  ActivityType,
   Events,
 } from 'discord.js';
 import dotenv from 'dotenv';
@@ -153,6 +154,22 @@ async function ensureChannelPermissions(channel, guild) {
   }
 
   return fixes;
+}
+
+// ─── Presence (custom status under the bot's name) ────────────────────────────
+// Affiche un statut « /confession en MP · N participants » qui se rafraîchit
+// à chaque event qui change le compte (join modal, ban, wipe).
+function updatePresence() {
+  if (!client.user) return; // bot pas encore prêt
+  const count = getAllConsents().length;
+  client.user.setPresence({
+    activities: [{
+      name:  'custom',                    // requis par discord.js, ignoré pour Custom
+      type:  ActivityType.Custom,
+      state: lang.presenceText(count),    // c'est ce texte qui s'affiche
+    }],
+    status: 'online',
+  });
 }
 
 // ─── Playerlist pagination sessions ──────────────────────────────────────────
@@ -329,6 +346,9 @@ client.once(Events.ClientReady, async (c) => {
     console.error(`   Vérifie que le bot a la permission "Gérer le salon" dans #${confessionChannel.name}`);
   }
 
+  // Statut initial sous le nom du bot
+  updatePresence();
+
   console.log('\n🟢 Bot prêt.\n');
 });
 
@@ -389,6 +409,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     addConsent(interaction.user.id);
     await assignParticipantRole(interaction.user.id);
+    updatePresence();
     const confirmedEmbed = new EmbedBuilder()
       .setColor(0x57F287)
       .setTitle(lang.joinSuccessTitle)
@@ -846,6 +867,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
       }
 
+      updatePresence();
       return interaction.editReply({ content: lang.resetAllSuccess(deleted) });
     }
 
@@ -871,6 +893,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (!ok) return interaction.editReply({ content: lang.banAlready(username) });
       removeConsent(userId);
       await removeParticipantRole(userId);
+      updatePresence();
 
       if (!deletePublic) {
         return interaction.editReply({ content: lang.banSuccess(username) });

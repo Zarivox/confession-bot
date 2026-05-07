@@ -65,6 +65,9 @@ export default {
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
   playerlistExpired: '❌ List expired, run `/playerlist` again.',
 
+  // Bot presence (custom status under the bot's name)
+  presenceText: (n) => `/confession in DM · ${n} participant${n === 1 ? '' : 's'}`,
+
   // /cooldown
   cooldownDmOnly:    '❌ This command can only be used in **direct messages** with me.',
   cooldownTitle:     '⏳ Your cooldowns',
