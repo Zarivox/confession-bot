@@ -31,7 +31,7 @@ export default {
 
   // /join
   joinAlready:       '✅ You have already signed the contract, you can use `/confession`.',
-  joinSuccess:       '✅ Contract signed! You can now use `/confession` in DMs with me.',
+  joinSuccess:       '✅ Welcome! You now have access to the **confession channel**.\nUse `/confession` in **DM** with me to post (anonymously or not), and `/help` anytime to see all commands.',
   joinContractTitle: '📋 Participation Contract — Confessions',
   joinContractDesc:  [
     '> Before you can post a confession, you must read and accept the following terms.\n',
@@ -63,6 +63,35 @@ export default {
   playerlistEmpty:   '❌ No members have signed the contract yet.',
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
   playerlistExpired: '❌ List expired, run `/playerlist` again.',
+
+  // /help
+  helpTitle:           '📖 Help — Confession Commands',
+  helpFieldDmName:     '📩 In **DM** with the bot',
+  helpFieldDmValue: [
+    '`/confession [message] [image]` — Post an **anonymous** confession',
+    '`/confession reveal:true` — Post with your identity',
+    '`/join` — Sign the contract (required before posting)',
+    '`/contrat` — Re-read the contract',
+    '`/help` — Show this menu',
+  ].join('\n'),
+  helpFieldServerName: '🏠 On the **server**',
+  helpFieldServerValue: [
+    '`/top période:week|month|all` — Top voted confessions',
+    '`/join`, `/contrat`, `/help` — Also available on the server',
+    '✅ / ❌ on each confession to vote',
+  ].join('\n'),
+  helpFieldAdminName:  '🛡️ Admin Commands',
+  helpFieldAdminValue: [
+    '`/admin reset @user` — Reset cooldowns',
+    '`/admin setdelay type hours` — Change a cooldown',
+    '`/admin stats` — Statistics',
+    '`/admin delete number:X` — Delete a confession',
+    '`/admin wipe confirm:RESET` — Full wipe',
+    '`/admin ban` / `unban` / `banlist` / `clearban` — Ban management',
+    '`/admin info user:@...` — Detailed user info',
+    '`/playerlist` — List of members who signed',
+  ].join('\n'),
+  helpFooter:          'ℹ️ /confession only works in DMs to preserve your anonymity.',
 
   // /admin stats
   statsTitle:    '📊 Confession Statistics',

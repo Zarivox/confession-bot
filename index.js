@@ -608,6 +608,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return interaction.reply({ embeds: [contractEmbed], flags: MessageFlags.Ephemeral });
   }
 
+  // ─── /help ─────────────────────────────────────────────────────────────────
+  if (interaction.commandName === 'help') {
+    const embed = new EmbedBuilder()
+      .setColor(0xE8C547)
+      .setTitle(lang.helpTitle)
+      .addFields(
+        { name: lang.helpFieldDmName,     value: lang.helpFieldDmValue,     inline: false },
+        { name: lang.helpFieldServerName, value: lang.helpFieldServerValue, inline: false },
+      )
+      .setFooter({ text: lang.helpFooter })
+      .setTimestamp();
+
+    // Bonus : l'admin voit aussi ses commandes
+    if (interaction.user.id === ADMIN_ID) {
+      embed.addFields({ name: lang.helpFieldAdminName, value: lang.helpFieldAdminValue, inline: false });
+    }
+
+    return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  }
+
   // ─── /playerlist ───────────────────────────────────────────────────────────
   if (interaction.commandName === 'playerlist') {
     await interaction.deferReply();

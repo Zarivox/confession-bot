@@ -71,7 +71,7 @@ Create a `.env` file at the root based on `.env.example`:
 npm run deploy
 ```
 
-> Global commands (`/confession`, `/join`) may take up to 1 hour to appear.
+> Global commands (`/confession`, `/join`, `/contrat`, `/help`) may take up to 1 hour to appear.
 > Guild commands (`/top`, `/admin`, `/playerlist`) update instantly.
 
 ### 4. Start the bot
@@ -92,6 +92,7 @@ On startup, the bot will:
 
 | Command | Where | Description |
 |---|---|---|
+| `/help` | Server or DM | Show all available commands and how to use them |
 | `/join` | Server or DM | Sign the participation contract (required before posting) |
 | `/contrat` | Server or DM | Read the participation contract at any time (read-only) |
 | `/confession` | DM only | Post an anonymous confession |

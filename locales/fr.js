@@ -31,7 +31,7 @@ export default {
 
   // /join
   joinAlready:      '✅ Tu as déjà signé le contrat, tu peux utiliser `/confession`.',
-  joinSuccess:      '✅ Contrat signé ! Tu peux maintenant utiliser `/confession` en MP avec moi.',
+  joinSuccess:      '✅ Bienvenue ! Tu as maintenant accès au **salon des confessions**.\nUtilise `/confession` en **MP** avec moi pour poster (anonymement ou non), et `/help` à tout moment pour voir toutes les commandes.',
   joinContractTitle: '📋 Contrat de participation — Confessions',
   joinContractDesc: [
     '> Avant de pouvoir poster une confession, tu dois lire et accepter les conditions suivantes.\n',
@@ -63,6 +63,35 @@ export default {
   playerlistEmpty:   '❌ Aucun membre n\'a encore signé le contrat.',
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
   playerlistExpired: '❌ Liste expirée, refais `/playerlist`.',
+
+  // /help
+  helpTitle:           '📖 Aide — Commandes Confessions',
+  helpFieldDmName:     '📩 En **MP** avec le bot',
+  helpFieldDmValue: [
+    '`/confession [message] [image]` — Poster une confession **anonyme**',
+    '`/confession reveal:true` — Poster avec ton identité',
+    '`/join` — Signer le contrat (obligatoire avant de poster)',
+    '`/contrat` — Relire le contrat',
+    '`/help` — Afficher ce menu',
+  ].join('\n'),
+  helpFieldServerName: '🏠 Sur le **serveur**',
+  helpFieldServerValue: [
+    '`/top période:semaine|mois|tous` — Top des confessions les plus votées',
+    '`/join`, `/contrat`, `/help` — Disponibles aussi sur le serveur',
+    '✅ / ❌ sur chaque confession pour voter',
+  ].join('\n'),
+  helpFieldAdminName:  '🛡️ Commandes Admin',
+  helpFieldAdminValue: [
+    '`/admin reset @user` — Reset les cooldowns',
+    '`/admin setdelay type hours` — Changer un cooldown',
+    '`/admin stats` — Statistiques',
+    '`/admin delete number:X` — Supprimer une confession',
+    '`/admin wipe confirm:RESET` — Wipe complet',
+    '`/admin ban` / `unban` / `banlist` / `clearban` — Gestion des bans',
+    '`/admin info user:@...` — Info détaillée d\'un membre',
+    '`/playerlist` — Liste des membres ayant signé',
+  ].join('\n'),
+  helpFooter:          'ℹ️ /confession ne fonctionne qu\'en MP pour préserver ton anonymat.',
 
   // /admin stats
   statsTitle:    '📊 Statistiques des confessions',
