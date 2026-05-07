@@ -91,10 +91,18 @@ const adminCommand = new SlashCommandBuilder()
       .addNumberOption(option =>
         option
           .setName('hours')
-          .setDescription('Cooldown in hours (0 to disable, e.g. 0.5 for 30min)')
-          .setRequired(true)
+          .setDescription('Hours part of the cooldown (e.g. 1.5 = 1h30). Combine with minutes if needed.')
+          .setRequired(false)
           .setMinValue(0)
           .setMaxValue(168)
+      )
+      .addNumberOption(option =>
+        option
+          .setName('minutes')
+          .setDescription('Minutes part of the cooldown (added to hours). Use 0 with hours:0 to disable.')
+          .setRequired(false)
+          .setMinValue(0)
+          .setMaxValue(10080)
       )
   )
   .addSubcommand(sub =>

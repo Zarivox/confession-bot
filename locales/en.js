@@ -87,7 +87,7 @@ export default {
   helpFieldAdminName:  '🛡️ Admin Commands',
   helpFieldAdminValue: [
     '`/admin reset @user` — Reset cooldowns',
-    '`/admin setdelay type hours` — Change a cooldown',
+    '`/admin setdelay type hours minutes` — Change a cooldown (combine h+min)',
     '`/admin stats` — Statistics',
     '`/admin delete number:X` — Delete a confession',
     '`/admin wipe confirm:RESET` — Full wipe',
@@ -139,7 +139,8 @@ export default {
   // /admin
   adminDenied:  '❌ You do not have permission to use this command.',
   resetSuccess:  (u) => `✅ Cooldowns reset for **${u}** (anonymous + public).`,
-  delaySuccess:  (h, type) => `✅ **${type === 'anonymous' ? 'Anonymous' : 'Public'}** cooldown updated: **${h}h**.`,
+  delaySuccess:  (duration, type) => `✅ **${type === 'anonymous' ? 'Anonymous' : 'Public'}** cooldown updated: **${duration}**.`,
+  setdelayMissing: '❌ You must provide at least `hours` or `minutes`.',
   delayDisabled: (type) => `✅ **${type === 'anonymous' ? 'Anonymous' : 'Public'}** cooldown disabled.`,
   deleteSuccess:        (n) => `✅ Confession **#${n}** has been deleted.`,
   deleteNotFound:       '❌ No confession found with that number.',

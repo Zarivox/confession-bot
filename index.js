@@ -737,12 +737,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (sub === 'setdelay') {
-      const type  = interaction.options.getString('type');
-      const hours = interaction.options.getNumber('hours');
-      const ms    = hours * 3600000;
+      const type    = interaction.options.getString('type');
+      const hours   = interaction.options.getNumber('hours');
+      const minutes = interaction.options.getNumber('minutes');
+
+      if (hours == null && minutes == null) {
+        return interaction.reply({ content: lang.setdelayMissing, flags: MessageFlags.Ephemeral });
+      }
+
+      const ms = (hours ?? 0) * 3600000 + (minutes ?? 0) * 60000;
       if (type === 'anonymous') setDelay(ms);
       else setPublicDelay(ms);
-      const content = hours === 0 ? lang.delayDisabled(type) : lang.delaySuccess(hours, type);
+
+      const content = ms === 0
+        ? lang.delayDisabled(type)
+        : lang.delaySuccess(formatDuration(ms), type);
       return interaction.reply({ content, flags: MessageFlags.Ephemeral });
     }
 
