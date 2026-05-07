@@ -507,6 +507,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.invalidVideo, flags: MessageFlags.Ephemeral });
     }
 
+    // Check upload size against server's max (varies by boost tier)
+    const totalBytes = (image?.size ?? 0) + (video?.size ?? 0);
+    if (totalBytes > 0) {
+      const guild   = await client.guilds.fetch(GUILD_ID);
+      const tier    = guild.premiumTier ?? 0;
+      const maxMB   = tier >= 3 ? 100 : tier >= 2 ? 50 : 10;
+      const maxBytes = maxMB * 1024 * 1024;
+      if (totalBytes > maxBytes) {
+        const sizeMB = (totalBytes / 1024 / 1024).toFixed(1);
+        return interaction.reply({
+          content: lang.fileTooLarge(sizeMB, maxMB),
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
+
     // Reserve the number atomically BEFORE posting so embed and JSON always match
     const nextNumber = reserveNumber();
 

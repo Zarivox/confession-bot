@@ -7,6 +7,7 @@ export default {
   invalidChannel:  '❌ The configured channel is not a valid text channel.',
   invalidImage:    '❌ The attached file is not a valid image.',
   invalidVideo:    '❌ The attached file is not a valid video.',
+  fileTooLarge:    (size, max) => `❌ File too large: **${size} MB**. Server limit: **${max} MB**. Compress the file or boost the server to raise the limit.`,
   sendError:       '❌ Failed to send your confession. Check the bot permissions in the channel.',
   saveError:       '❌ Internal error while saving. Please try again in a moment.',
   success:         (t) => `✅ Your confession has been posted anonymously! You can post again in **${t}**.`,

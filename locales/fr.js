@@ -7,6 +7,7 @@ export default {
   invalidChannel:  '❌ Le salon configuré n\'est pas un salon textuel valide.',
   invalidImage:    '❌ Le fichier joint n\'est pas une image valide.',
   invalidVideo:    '❌ Le fichier joint n\'est pas une vidéo valide.',
+  fileTooLarge:    (size, max) => `❌ Fichier trop lourd : **${size} MB**. Limite sur ce serveur : **${max} MB**. Compresse ton fichier ou booste le serveur pour augmenter la limite.`,
   sendError:       '❌ Impossible d\'envoyer ta confession. Vérifie les permissions du bot dans le salon.',
   saveError:       '❌ Erreur interne lors de l\'enregistrement. Réessaie dans quelques instants.',
   success:         (t) => `✅ Ta confession a été postée anonymement ! Tu pourras en poster une nouvelle dans **${t}**.`,
