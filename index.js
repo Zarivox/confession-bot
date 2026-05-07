@@ -665,6 +665,39 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   }
 
+  // ─── /cooldown ─────────────────────────────────────────────────────────────
+  if (interaction.commandName === 'cooldown') {
+    if (interaction.inGuild()) {
+      return interaction.reply({ content: lang.cooldownDmOnly, flags: MessageFlags.Ephemeral });
+    }
+    if (isBanned(interaction.user.id)) {
+      return interaction.reply({ content: lang.banned, flags: MessageFlags.Ephemeral });
+    }
+
+    const cdAnon = getRemainingCooldown(interaction.user.id);
+    const cdPub  = getRemainingPublicCooldown(interaction.user.id);
+    const dAnon  = getDelay();
+    const dPub   = getPublicDelay();
+
+    const anonValue = dAnon === 0
+      ? lang.cooldownDisabled
+      : (cdAnon > 0 ? formatDuration(cdAnon) : lang.cooldownAvailable);
+    const pubValue  = dPub === 0
+      ? lang.cooldownDisabled
+      : (cdPub > 0 ? formatDuration(cdPub) : lang.cooldownAvailable);
+
+    const embed = new EmbedBuilder()
+      .setColor(0xE8C547)
+      .setTitle(lang.cooldownTitle)
+      .addFields(
+        { name: lang.cooldownAnon, value: anonValue, inline: true },
+        { name: lang.cooldownPub,  value: pubValue,  inline: true },
+      )
+      .setTimestamp();
+
+    return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  }
+
   // ─── /playerlist ───────────────────────────────────────────────────────────
   if (interaction.commandName === 'playerlist') {
     await interaction.deferReply();

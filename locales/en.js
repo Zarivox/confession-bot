@@ -65,6 +65,14 @@ export default {
   playerlistPage:    (cur, total) => `Page ${cur} / ${total}`,
   playerlistExpired: '❌ List expired, run `/playerlist` again.',
 
+  // /cooldown
+  cooldownDmOnly:    '❌ This command can only be used in **direct messages** with me.',
+  cooldownTitle:     '⏳ Your cooldowns',
+  cooldownAnon:      '🟡 Anonymous cooldown',
+  cooldownPub:       '🔵 Public cooldown',
+  cooldownAvailable: '✅ Available',
+  cooldownDisabled:  '— (disabled)',
+
   // /help
   helpTitle:           '📖 Help — Confession Commands',
   helpFieldDmName:     '📩 In **DM** with the bot',
@@ -76,6 +84,7 @@ export default {
     '',
     '`/join` — Sign the contract (required before posting)',
     '`/contrat` — Re-read the contract',
+    '`/cooldown` — Check your remaining cooldowns',
     '`/help` — Show this menu',
   ].join('\n'),
   helpFieldServerName: '🏠 On the **server**',
