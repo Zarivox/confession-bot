@@ -132,21 +132,6 @@ export default {
   clearbanWrongConfirm: '❌ Tu dois taper exactement **CLEARBAN** pour confirmer.',
   clearbanSuccess:    (n) => `✅ Liste de bannissement vidée. **${n}** membre(s) débanni(s).`,
 
-  // /admin info
-  infoTitle:        (name) => `👤 Info — ${name}`,
-  infoBanned:       'Banni',
-  infoConsented:    'Contrat signé',
-  infoHasRole:      'Rôle participant',
-  infoCdAnon:       'Cooldown anonyme',
-  infoCdPub:        'Cooldown public',
-  infoConfessions:  'Confessions postées',
-  infoYes:          '✅ Oui',
-  infoNo:           '❌ Non',
-  infoCdAvailable:  '✅ Disponible',
-  infoUserNotInGuild: '⚠️ Utilisateur hors serveur',
-  infoNotApplicable:  '— (pas de rôle configuré)',
-  infoConfessionsCount: (anon, pub) => `**${anon}** anonyme(s) · **${pub}** publique(s)`,
-
   // /admin
   adminDenied:   '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
   resetSuccess:  (u) => `✅ Les cooldowns de **${u}** ont été réinitialisés (anonyme + public).`,

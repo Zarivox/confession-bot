@@ -54,11 +54,24 @@ import {
 import { isBanned, addBan, removeBan, getAllBans, resetBans } from './bans.js';
 
 // ─── Validation des variables d'environnement ─────────────────────────────────
-const REQUIRED_ENV = ['BOT_TOKEN', 'CLIENT_ID', 'GUILD_ID', 'CONFESSION_CHANNEL_ID', 'ADMIN_ID'];
+const REQUIRED_ENV = ['BOT_TOKEN', 'CLIENT_ID', 'GUILD_ID', 'CONFESSION_CHANNEL_ID', 'ADMIN_ID', 'AUTHOR_PUB', 'VOTE_SECRET'];
 const missingEnv = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missingEnv.length > 0) {
   console.error(`\n❌ Variables d'environnement manquantes : ${missingEnv.join(', ')}`);
-  console.error('Corrige le .env et relance le bot.\n');
+  console.error('Corrige le .env et relance le bot.');
+  console.error('Pour AUTHOR_PUB et VOTE_SECRET : lance `(internal tool)` sur ton PC.\n');
+  process.exit(1);
+}
+
+// Sanity-check des nouveaux secrets (format base64 + bonne longueur)
+try {
+  const pubBytes = Buffer.from(process.env.AUTHOR_PUB, 'base64');
+  if (pubBytes.length !== 32) throw new Error(`AUTHOR_PUB length is ${pubBytes.length} bytes (expected 32)`);
+  const secretBytes = Buffer.from(process.env.VOTE_SECRET, 'base64');
+  if (secretBytes.length < 16) throw new Error(`VOTE_SECRET length is ${secretBytes.length} bytes (expected ≥16)`);
+} catch (e) {
+  console.error(`\n❌ AUTHOR_PUB ou VOTE_SECRET invalide : ${e.message}`);
+  console.error('Régénère-les avec `(internal tool)` sur ton PC.\n');
   process.exit(1);
 }
 
