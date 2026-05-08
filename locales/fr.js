@@ -104,7 +104,6 @@ export default {
     '`/admin delete number:X` — Supprimer une confession',
     '`/admin wipe confirm:RESET` — Wipe complet',
     '`/admin ban` / `unban` / `banlist` / `clearban` — Gestion des bans',
-    '`/admin info user:@...` — Info détaillée d\'un membre',
     '`/playerlist` — Liste des membres ayant signé',
   ].join('\n'),
   helpFooter:          'ℹ️ /confession ne fonctionne qu\'en MP pour préserver ton anonymat.',

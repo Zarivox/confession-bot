@@ -17,7 +17,7 @@ A Discord bot that lets users send anonymous (or identified) confessions to a de
 - Ban system (with optional public confession cleanup)
 - `/top` leaderboard by votes (week / month / all time)
 - `/playerlist` — paginated list of members who signed the contract
-- Full admin panel (`/admin`) — bans, cooldowns, stats, delete, wipe, info
+- Full admin panel (`/admin`) — bans, cooldowns, stats, delete, wipe
 - **Dynamic custom status** under the bot name showing live participant count
 - Multilingual (`LANG=fr` or `LANG=en`)
 - Private extension points (`locales/private.js` + `private-handlers.js`) — gitignored, instance-specific
@@ -120,7 +120,6 @@ On startup, the bot will:
 | `/admin unban user:@... \| id:...` | Unban a user (they must `/join` again) |
 | `/admin banlist` | Show all banned users |
 | `/admin clearban confirm:CLEARBAN` | Wipe the entire ban list |
-| `/admin info user:@... \| id:...` | Full status of a user (banned, consented, role, cooldowns, post count) |
 | `/playerlist` | Show all members who signed the contract (paginated) |
 
 > Bans persist through `/admin wipe`. Use `/admin clearban` to wipe the ban list.

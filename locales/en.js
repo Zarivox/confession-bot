@@ -104,7 +104,6 @@ export default {
     '`/admin delete number:X` — Delete a confession',
     '`/admin wipe confirm:RESET` — Full wipe',
     '`/admin ban` / `unban` / `banlist` / `clearban` — Ban management',
-    '`/admin info user:@...` — Detailed user info',
     '`/playerlist` — List of members who signed',
   ].join('\n'),
   helpFooter:          'ℹ️ /confession only works in DMs to preserve your anonymity.',

@@ -178,17 +178,6 @@ const adminCommand = new SlashCommandBuilder()
           .setDescription('Type CLEARBAN to confirm')
           .setRequired(true)
       )
-  )
-  .addSubcommand(sub =>
-    sub
-      .setName('info')
-      .setDescription('Show full status of a user (banned, consented, role, cooldowns, confessions)')
-      .addUserOption(option =>
-        option.setName('user').setDescription('User to inspect (if still in the server)').setRequired(false)
-      )
-      .addStringOption(option =>
-        option.setName('id').setDescription('User ID to inspect (if they left the server)').setRequired(false)
-      )
   );
 
 const rest = new REST().setToken(process.env.BOT_TOKEN);

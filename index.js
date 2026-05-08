@@ -950,61 +950,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
-    if (sub === 'info') {
-      const target = interaction.options.getUser('user');
-      const rawId  = interaction.options.getString('id');
-      if (!target && !rawId) {
-        return interaction.reply({ content: lang.banNoTarget, flags: MessageFlags.Ephemeral });
-      }
-      if (rawId && !SNOWFLAKE_REGEX.test(rawId)) {
-        return interaction.reply({ content: lang.banInvalidId, flags: MessageFlags.Ephemeral });
-      }
-
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-      const userId      = target?.id ?? rawId;
-      const displayName = target?.username ?? rawId;
-
-      const banned     = isBanned(userId);
-      const consented  = hasConsented(userId);
-      const cdAnon     = getRemainingCooldown(userId);
-      const cdPub      = getRemainingPublicCooldown(userId);
-      const all        = getAll();
-      const userPosts  = all.filter(c => c.authorId === userId);
-      const anonCount  = userPosts.filter(c => c.anonymous).length;
-      const pubCount   = userPosts.length - anonCount;
-
-      // Vérifier le rôle si configuré
-      let roleStatus = lang.infoNotApplicable;
-      if (PARTICIPANT_ROLE_ID) {
-        try {
-          const guild  = await client.guilds.fetch(GUILD_ID);
-          const member = await guild.members.fetch(userId);
-          roleStatus   = member.roles.cache.has(PARTICIPANT_ROLE_ID) ? lang.infoYes : lang.infoNo;
-        } catch {
-          roleStatus = lang.infoUserNotInGuild;
-        }
-      }
-
-      const embed = new EmbedBuilder()
-        .setColor(banned ? 0xED4245 : (consented ? 0x57F287 : 0xE8C547))
-        .setTitle(lang.infoTitle(displayName))
-        .addFields(
-          { name: lang.infoBanned,      value: banned    ? lang.infoYes : lang.infoNo, inline: true },
-          { name: lang.infoConsented,   value: consented ? lang.infoYes : lang.infoNo, inline: true },
-          { name: lang.infoHasRole,     value: roleStatus,                              inline: true },
-          { name: lang.infoCdAnon,      value: cdAnon > 0 ? formatDuration(cdAnon) : lang.infoCdAvailable, inline: true },
-          { name: lang.infoCdPub,       value: cdPub  > 0 ? formatDuration(cdPub)  : lang.infoCdAvailable, inline: true },
-          { name: lang.infoConfessions, value: lang.infoConfessionsCount(anonCount, pubCount), inline: true },
-        )
-        .setFooter({ text: `ID : ${userId}` })
-        .setTimestamp();
-
-      if (target) embed.setThumbnail(target.displayAvatarURL({ size: 128 }));
-
-      return interaction.editReply({ embeds: [embed] });
-    }
-
     if (sub === 'clearban') {
       const confirm = interaction.options.getString('confirm');
       if (confirm !== 'CLEARBAN') {
