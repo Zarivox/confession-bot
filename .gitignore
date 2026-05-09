@@ -24,3 +24,6 @@ private-handlers.js.bak-*
 
 # Private operational scripts — kept local only
 scripts/
+
+# MkDocs build output (regenerated on demand)
+site/
