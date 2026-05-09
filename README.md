@@ -64,6 +64,8 @@ Create a `.env` file at the root based on `.env.example`:
 | `GUILD_ID` | ✅ | Your server's ID |
 | `CONFESSION_CHANNEL_ID` | ✅ | Channel where confessions are posted |
 | `ADMIN_ID` | ✅ | Your Discord user ID (admin commands) |
+| `AUTHOR_PUB` | ✅ | X25519 public key (base64, 32 bytes) — encrypts anon author IDs at rest |
+| `VOTE_SECRET` | ✅ | HMAC key (base64, ≥16 bytes) — anonymises voter IDs in JSON |
 | `LANG` | — | Bot language (`en` or `fr`, default: `en`) |
 | `MAX_CONFESSIONS_MEMORY` | — | Max confessions kept in JSON (default: 1000) |
 | `PARTICIPANT_ROLE_ID` | — | Role assigned on `/join` (enables channel auto-permissions) |
@@ -160,7 +162,8 @@ In the server:
 confession-bot/
 ├── index.js              # Main bot logic (commands, interactions, events)
 ├── deploy-commands.js    # Slash command registration
-├── confessions.js        # Confession data layer (atomic JSON writes)
+├── confessions.js        # Confession data layer (atomic JSON writes, split files)
+├── crypto.js             # Author encryption + vote tag hashing
 ├── cooldowns.js          # Cooldown management (anonymous + public)
 ├── consents.js           # Opt-in consent tracking
 ├── bans.js               # Ban list management
@@ -179,7 +182,8 @@ confession-bot/
 
 The bot uses flat JSON files for storage. All writes are atomic (write-then-rename) and corrupted files are automatically backed up before reset:
 
-- `confessions.json` — list of confessions, votes, authors
+- `confessions-public.json` — non-anonymous confessions (authorId in clear, votes hashed)
+- `confessions-anon.json` — anonymous confessions (authorId encrypted at rest, votes hashed)
 - `cooldowns.json` — last post timestamps, cooldown durations
 - `consents.json` — list of users who signed the contract
 - `bans.json` — banned user IDs

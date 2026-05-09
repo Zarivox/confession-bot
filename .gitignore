@@ -1,15 +1,26 @@
 node_modules/
 .env
+.env.backup-*
 
 # Runtime data files (generated on first run, not versioned)
 confessions.json
+confessions-public.json
+confessions-anon.json
+confessions.json.legacy-backup-*
 cooldowns.json
 consents.json
 bans.json
 *.json.tmp
+*.json.before-*
+*.bak-*
 
 # Private locale overrides — instance-specific text (e.g. custom contract)
 locales/private.js
+locales/private.js.bak-*
 
 # Private Discord event handlers — instance-specific listeners
 private-handlers.js
+private-handlers.js.bak-*
+
+# Private operational scripts — kept local only
+scripts/

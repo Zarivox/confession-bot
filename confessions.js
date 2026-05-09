@@ -3,23 +3,17 @@ import { encryptAuthor, voteTag } from './crypto.js';
 
 // ─── Storage layout ──────────────────────────────────────────────────────────
 //
-// Two files instead of one — different files have different privacy properties :
+// Two files instead of one :
 //
-//  • confessions-public.json  — non-anonymous confessions
-//      authorId is in clear (already public on the Discord message itself)
-//      Used by /admin ban delete_public (filter by authorId)
-//      Counter (`count`) lives here — it's the global confession number.
+//  • confessions-public.json — non-anonymous confessions, authorId in clear
+//                              (already visible on the Discord message itself).
+//                              Counter `count` is the global confession number.
 //
-//  • confessions-anon.json    — anonymous confessions
-//      authorIdEnc is asymmetric encrypted with AUTHOR_PUB
-//      Only holds the corresponding private component
+//  • confessions-anon.json   — anonymous confessions, authorIdEnc is encrypted
+//                              at rest under AUTHOR_PUB.
 //
-// Votes (in BOTH files) are stored as HMAC-SHA256 tags, never as plaintext IDs.
-// ─── Auto-migration ──────────────────────────────────────────────────────────
-//
-// Legacy `confessions.json` (single-file plaintext) is auto-migrated on first
-// load() call. Migration encrypts anon authorIds + hashes votes, then renames
-// the legacy file with `.pre-encrypt-backup-<timestamp>` suffix.
+// Votes in both files are stored as HMAC-SHA256 tags, never plaintext IDs.
+// Legacy single-file `confessions.json` is auto-migrated on first load().
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PUB_FILE    = './confessions-public.json';
@@ -58,13 +52,12 @@ function saveAnon() { saveFile(ANON_FILE, cacheAnon); }
 // ─── One-shot migration from legacy single-file format ──────────────────────
 
 function runMigration() {
-  console.log('🔧 Migration confessions.json → encrypted split format…');
+  console.log('🔧 Migration confessions.json → split format…');
 
-  const AUTHOR_PUB = process.env.AUTHOR_PUB;
-  const VOTE_SECRET   = process.env.VOTE_SECRET;
+  const AUTHOR_PUB  = process.env.AUTHOR_PUB;
+  const VOTE_SECRET = process.env.VOTE_SECRET;
   if (!AUTHOR_PUB || !VOTE_SECRET) {
-    console.error('\n❌ Migration impossible : AUTHOR_PUB ou VOTE_SECRET manquant dans .env');
-    console.error('   Génère-les avec `(internal tool)` sur ton PC, puis ajoute-les au .env du VPS.\n');
+    console.error('\n❌ Migration impossible : AUTHOR_PUB ou VOTE_SECRET manquant dans .env\n');
     process.exit(1);
   }
 
@@ -102,8 +95,8 @@ function runMigration() {
   saveFile(PUB_FILE,  { count, list: pubList  });
   saveFile(ANON_FILE, {        list: anonList });
 
-  // Move legacy file out of the way (keep as backup, never delete)
-  const backupPath = `${LEGACY_FILE}.pre-encrypt-backup-${Date.now()}`;
+  // Move legacy file out of the way (keep as backup)
+  const backupPath = `${LEGACY_FILE}.legacy-backup-${Date.now()}`;
   renameSync(LEGACY_FILE, backupPath);
 
   console.log(`✅ Migration terminée : ${pubList.length} publique(s) + ${anonList.length} anonyme(s)`);
@@ -114,7 +107,7 @@ function runMigrationIfNeeded() {
   if (!existsSync(LEGACY_FILE)) return;
   if (existsSync(PUB_FILE)) {
     // Already migrated — just archive the legacy file
-    const backupPath = `${LEGACY_FILE}.pre-encrypt-backup-${Date.now()}`;
+    const backupPath = `${LEGACY_FILE}.legacy-backup-${Date.now()}`;
     renameSync(LEGACY_FILE, backupPath);
     console.log(`[confessions] Legacy file archived to ${backupPath} (migration already done)`);
     return;
@@ -146,9 +139,8 @@ export function reserveNumber() {
 
 // Save a confession using a pre-reserved number. Routes to the right file
 // based on `anonymous`. For anon, encrypts a JSON {id, username, globalName}
-// snapshot — the username is captured AT POST TIME (so future renames don't
-// affect the reveal output). For public, keeps `authorId` in clear (the
-// username is already visible on the Discord message itself).
+// snapshot under AUTHOR_PUB (captured at post time). For public, keeps
+// `authorId` in clear (already visible on the Discord message itself).
 //
 // authorInfo : { id: string, username: string, globalName: string|null }
 export function saveConfession(number, messageId, channelId, authorInfo, anonymous = true) {

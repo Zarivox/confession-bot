@@ -58,20 +58,18 @@ const REQUIRED_ENV = ['BOT_TOKEN', 'CLIENT_ID', 'GUILD_ID', 'CONFESSION_CHANNEL_
 const missingEnv = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missingEnv.length > 0) {
   console.error(`\n❌ Variables d'environnement manquantes : ${missingEnv.join(', ')}`);
-  console.error('Corrige le .env et relance le bot.');
-  console.error('Pour AUTHOR_PUB et VOTE_SECRET : lance `(internal tool)` sur ton PC.\n');
+  console.error('Corrige le .env et relance le bot.\n');
   process.exit(1);
 }
 
-// Sanity-check des nouveaux secrets (format base64 + bonne longueur)
+// Sanity-check format
 try {
   const pubBytes = Buffer.from(process.env.AUTHOR_PUB, 'base64');
   if (pubBytes.length !== 32) throw new Error(`AUTHOR_PUB length is ${pubBytes.length} bytes (expected 32)`);
   const secretBytes = Buffer.from(process.env.VOTE_SECRET, 'base64');
   if (secretBytes.length < 16) throw new Error(`VOTE_SECRET length is ${secretBytes.length} bytes (expected ≥16)`);
 } catch (e) {
-  console.error(`\n❌ AUTHOR_PUB ou VOTE_SECRET invalide : ${e.message}`);
-  console.error('Régénère-les avec `(internal tool)` sur ton PC.\n');
+  console.error(`\n❌ AUTHOR_PUB ou VOTE_SECRET invalide : ${e.message}\n`);
   process.exit(1);
 }
 
@@ -614,8 +612,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     // Save to JSON — if this fails, delete the orphaned Discord message.
-    // For anon, the {id, username, globalName} snapshot is captured here and
-    // asymmetric encrypted (only can later be processed locally).
+    // For anon, the {id, username, globalName} snapshot is encrypted at rest.
     try {
       const authorInfo = {
         id:         interaction.user.id,
