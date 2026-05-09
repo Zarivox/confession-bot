@@ -613,9 +613,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return interaction.reply({ content: lang.sendError, flags: MessageFlags.Ephemeral });
     }
 
-    // Save to JSON — if this fails, delete the orphaned Discord message
+    // Save to JSON — if this fails, delete the orphaned Discord message.
+    // For anon, the {id, username, globalName} snapshot is captured here and
+    // asymmetric encrypted (only can later be processed locally).
     try {
-      saveConfession(nextNumber, posted.id, CONFESSION_CHANNEL_ID, interaction.user.id, anonymous);
+      const authorInfo = {
+        id:         interaction.user.id,
+        username:   interaction.user.username ?? null,
+        globalName: interaction.user.globalName ?? null,
+      };
+      saveConfession(nextNumber, posted.id, CONFESSION_CHANNEL_ID, authorInfo, anonymous);
     } catch (e) {
       console.error('[confession] Failed to save confession #' + nextNumber + ':', e.message);
       try { await posted.delete(); } catch {}

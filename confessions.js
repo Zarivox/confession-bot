@@ -145,8 +145,13 @@ export function reserveNumber() {
 }
 
 // Save a confession using a pre-reserved number. Routes to the right file
-// based on `anonymous`. Encrypts authorId for anon, keeps it in clear for public.
-export function saveConfession(number, messageId, channelId, authorId, anonymous = true) {
+// based on `anonymous`. For anon, encrypts a JSON {id, username, globalName}
+// snapshot — the username is captured AT POST TIME (so future renames don't
+// affect the reveal output). For public, keeps `authorId` in clear (the
+// username is already visible on the Discord message itself).
+//
+// authorInfo : { id: string, username: string, globalName: string|null }
+export function saveConfession(number, messageId, channelId, authorInfo, anonymous = true) {
   const { pub, anon } = load();
   const base = {
     number,
@@ -160,7 +165,12 @@ export function saveConfession(number, messageId, channelId, authorId, anonymous
   if (anonymous) {
     const AUTHOR_PUB = process.env.AUTHOR_PUB;
     if (!AUTHOR_PUB) throw new Error('AUTHOR_PUB missing in .env');
-    anon.list.push({ ...base, authorIdEnc: encryptAuthor(authorId, AUTHOR_PUB) });
+    const payload = JSON.stringify({
+      id:         authorInfo.id,
+      username:   authorInfo.username   ?? null,
+      globalName: authorInfo.globalName ?? null,
+    });
+    anon.list.push({ ...base, authorIdEnc: encryptAuthor(payload, AUTHOR_PUB) });
 
     const maxMemory = parseInt(process.env.MAX_CONFESSIONS_MEMORY) || 1000;
     if (anon.list.length > maxMemory) {
@@ -169,7 +179,7 @@ export function saveConfession(number, messageId, channelId, authorId, anonymous
     }
     saveAnon();
   } else {
-    pub.list.push({ ...base, authorId });
+    pub.list.push({ ...base, authorId: authorInfo.id });
 
     const maxMemory = parseInt(process.env.MAX_CONFESSIONS_MEMORY) || 1000;
     if (pub.list.length > maxMemory) {
