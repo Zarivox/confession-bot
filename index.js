@@ -501,7 +501,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const message   = interaction.options.getString('message');
     const file      = interaction.options.getAttachment('fichier');
     const revealed  = interaction.options.getBoolean('reveal') ?? false;
-    const anonymous = !cmded;
+    const anonymous = !revealed;
 
     if (!message && !file) {
       return interaction.reply({ content: lang.noContent, flags: MessageFlags.Ephemeral });
