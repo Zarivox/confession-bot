@@ -527,15 +527,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
     }
 
+    // Defer here — the rest of the flow does several Discord API calls
+    // (channel fetch, guild fetch for boost tier, attachment re-upload) which
+    // can easily exceed Discord's 3s interaction timeout, especially for
+    // large media files. After defer, every reply uses editReply().
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     let confessionChannel;
     try {
       confessionChannel = await client.channels.fetch(CONFESSION_CHANNEL_ID);
     } catch {
-      return interaction.reply({ content: lang.channelNotFound, flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ content: lang.channelNotFound });
     }
 
     if (!confessionChannel?.isTextBased()) {
-      return interaction.reply({ content: lang.invalidChannel, flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ content: lang.invalidChannel });
     }
 
     // Check upload size against server's max (varies by boost tier)
@@ -546,9 +552,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const maxBytes = maxMB * 1024 * 1024;
       if (file.size > maxBytes) {
         const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-        return interaction.reply({
+        return interaction.editReply({
           content: lang.fileTooLarge(sizeMB, maxMB),
-          flags: MessageFlags.Ephemeral,
         });
       }
     }
@@ -608,7 +613,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         components: [buildVoteRow(nextNumber, 0, 0)],
       });
     } catch {
-      return interaction.reply({ content: lang.sendError, flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ content: lang.sendError });
     }
 
     // Save to JSON — if this fails, delete the orphaned Discord message.
@@ -623,23 +628,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch (e) {
       console.error('[confession] Failed to save confession #' + nextNumber + ':', e.message);
       try { await posted.delete(); } catch {}
-      return interaction.reply({ content: lang.saveError, flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ content: lang.saveError });
     }
 
     if (anonymous) {
       const delay = getDelay();
       // Only persist timestamp if cooldown is enabled — avoids unnecessary disk writes
       if (delay > 0) setLastConfession(interaction.user.id);
-      await interaction.reply({
+      await interaction.editReply({
         content: delay > 0 ? lang.success(formatDuration(delay)) : lang.successNoDelay,
-        flags: MessageFlags.Ephemeral,
       });
     } else {
       const publicDelay = getPublicDelay();
       if (publicDelay > 0) setLastPublicConfession(interaction.user.id);
-      await interaction.reply({
+      await interaction.editReply({
         content: publicDelay > 0 ? lang.success(formatDuration(publicDelay)) : lang.successReveal,
-        flags: MessageFlags.Ephemeral,
       });
     }
   }
