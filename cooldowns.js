@@ -1,8 +1,56 @@
 import { readFileSync, writeFileSync, existsSync, renameSync, copyFileSync } from 'fs';
+import { userTag } from './crypto.js';
+
+// ─── Storage ─────────────────────────────────────────────────────────────────
+//
+// Per-user "last post" timestamps are stored under HMAC-SHA256 tags of the
+// userId, not the userId itself. Lookups recompute the tag from the live
+// userId (always available in the Discord interaction), then index the dict.
+//
+// Cat-ing cooldowns.json gives a list of opaque 64-char hex keys → timestamps,
+// with no way to know which user is which. Cross-referencing with confession
+// timestamps no longer leaks "user X posted confession N".
+//
+// Auto-migrates legacy plaintext userId keys (17-20 digit snowflakes) to
+// hashed keys on first load.
+// ─────────────────────────────────────────────────────────────────────────────
 
 const FILE = './cooldowns.json';
 const DEFAULT = { delayMs: 6 * 3600000, delayPublicMs: 0, users: {}, usersPublic: {} };
+
+const SNOWFLAKE_REGEX = /^\d{17,20}$/;
+
 let cache = null;
+
+function key(userId) {
+  const secret = process.env.VOTE_SECRET;
+  if (!secret) throw new Error('VOTE_SECRET missing in .env');
+  return userTag(secret, userId);
+}
+
+// Rewrite any legacy snowflake keys to their hashed equivalent. Returns true
+// if anything changed (and the caller will save).
+function migrateInPlace(data) {
+  let changed = false;
+
+  for (const bucketName of ['users', 'usersPublic']) {
+    const bucket = data[bucketName] ?? {};
+    for (const k of Object.keys(bucket)) {
+      if (SNOWFLAKE_REGEX.test(k)) {
+        const newKey = key(k);
+        // If both legacy and hashed entries somehow coexist, keep the most
+        // recent timestamp.
+        const ts = Math.max(bucket[newKey] ?? 0, bucket[k]);
+        delete bucket[k];
+        bucket[newKey] = ts;
+        changed = true;
+      }
+    }
+    data[bucketName] = bucket;
+  }
+
+  return changed;
+}
 
 function load() {
   if (cache) return cache;
@@ -12,10 +60,16 @@ function load() {
   }
   try {
     const data = JSON.parse(readFileSync(FILE, 'utf-8'));
-    // Migration: add missing fields if upgrading from older version
     if (data.delayPublicMs === undefined) data.delayPublicMs = 0;
+    if (!data.users)       data.users       = {};
     if (!data.usersPublic) data.usersPublic = {};
+
+    const migrated = migrateInPlace(data);
     cache = data;
+    if (migrated) {
+      console.log('[cooldowns] Auto-migrated legacy plaintext keys to hashed form');
+      save(data);
+    }
   } catch (e) {
     console.error('[cooldowns] Corrupted JSON:', e.message);
     try {
@@ -40,7 +94,7 @@ function save(data) {
 export function getRemainingCooldown(userId) {
   const data = load();
   if (!data.delayMs) return 0;
-  const last = data.users[userId];
+  const last = data.users[key(userId)];
   if (!last) return 0;
   const remaining = last + data.delayMs - Date.now();
   return remaining > 0 ? remaining : 0;
@@ -48,13 +102,13 @@ export function getRemainingCooldown(userId) {
 
 export function setLastConfession(userId) {
   const data = load();
-  data.users[userId] = Date.now();
+  data.users[key(userId)] = Date.now();
   save(data);
 }
 
 export function resetCooldown(userId) {
   const data = load();
-  delete data.users[userId];
+  delete data.users[key(userId)];
   save(data);
 }
 
@@ -73,7 +127,7 @@ export function setDelay(ms) {
 export function getRemainingPublicCooldown(userId) {
   const data = load();
   if (!data.delayPublicMs) return 0;
-  const last = data.usersPublic[userId];
+  const last = data.usersPublic[key(userId)];
   if (!last) return 0;
   const remaining = last + data.delayPublicMs - Date.now();
   return remaining > 0 ? remaining : 0;
@@ -81,13 +135,13 @@ export function getRemainingPublicCooldown(userId) {
 
 export function setLastPublicConfession(userId) {
   const data = load();
-  data.usersPublic[userId] = Date.now();
+  data.usersPublic[key(userId)] = Date.now();
   save(data);
 }
 
 export function resetPublicCooldown(userId) {
   const data = load();
-  delete data.usersPublic[userId];
+  delete data.usersPublic[key(userId)];
   save(data);
 }
 
@@ -105,7 +159,7 @@ export function setPublicDelay(ms) {
 
 export function resetAllCooldowns() {
   const data = load();
-  data.users = {};
+  data.users       = {};
   data.usersPublic = {};
   save(data);
 }

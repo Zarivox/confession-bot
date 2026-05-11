@@ -70,3 +70,19 @@ export function voteTag(secretB64, userId, confessionNumber) {
     .update(`${userId}:${confessionNumber}`)
     .digest('hex');
 }
+
+// ─── HMAC user tag ────────────────────────────────────────────────────────────
+//
+// Used by cooldowns.js (and any other module that needs to track per-user
+// state without keeping plaintext IDs at rest). Same secret as voteTag — the
+// inputs are structurally different so the outputs never collide in practice.
+
+export function userTag(secretB64, userId) {
+  const secret = Buffer.from(secretB64, 'base64');
+  if (secret.length < 16) {
+    throw new Error(`Invalid VOTE_SECRET length: ${secret.length} bytes (need ≥16)`);
+  }
+  return crypto.createHmac('sha256', secret)
+    .update(`u:${userId}`)
+    .digest('hex');
+}

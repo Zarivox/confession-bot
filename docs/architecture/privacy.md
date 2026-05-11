@@ -116,11 +116,17 @@ This is **deliberate and conscious** — much harder to do accidentally than it 
 
 For full transparency :
 
-- **`cooldowns.json` contains userIds in clear** — the bot needs to look them up by ID for cooldown checks. If you find this acceptable for your threat model, fine. If not, see the FAQ for ideas.
-- **`consents.json` contains userIds in clear** — same reason.
-- **`bans.json` contains userIds in clear** — same reason.
+- **`consents.json` contains userIds in clear** — the bot needs them for the participant list, and the same userIds are already publicly visible on Discord via the participant role anyway.
+- **`bans.json` contains userIds in clear** — the bot operator needs to manage bans by ID (`/admin unban`, `/admin banlist`). No timestamps in this file, so no correlation attack possible.
 - **The Discord channel itself shows the bot's messages** with timestamps. If a user is online when an anon confession appears, anyone watching the member list could correlate. This is a Discord-platform concern, not something the bot can solve.
 - **The bot operator with full server access** can run the bot's own code with debug logging to reveal posters going forward. Privacy at rest only protects what's already on disk.
+
+!!! note "cooldowns.json is also tagged"
+    `cooldowns.json` used to store userIds in clear, which allowed a
+    correlation attack : per-user timestamps could be matched against
+    anonymous confession timestamps to identify authors. That file is now
+    HMAC-tagged with the same scheme as votes — opaque hex keys, no
+    cross-referencing possible.
 
 ## Summary
 

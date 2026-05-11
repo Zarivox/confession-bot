@@ -81,28 +81,35 @@ The counter does **not** live here — it's in `confessions-public.json`. The tw
 
 ## `cooldowns.json`
 
-Tracks per-user last-post timestamps + the global cooldown durations.
+Tracks per-user last-post timestamps + the global cooldown durations. User
+identities are stored as **HMAC-SHA256 tags** (same scheme as votes) so that
+opening the file gives only opaque hex keys → no way to cross-reference
+timestamps against `confessions-anon.json` to identify authors.
 
 ```json
 {
-  "delay": 21600000,
-  "publicDelay": 86400000,
+  "delayMs": 21600000,
+  "delayPublicMs": 86400000,
   "users": {
-    "276423795877871616": 1778233042986,
-    "374142790038192129": 1778229440794
+    "8c2d0e4f1a3b9c2d8d4e7f10b9a3f1b9c28d4e7f10b9a3f1b9c2d0e4f1a3b9c2": 1778233042986,
+    "7e1a4d8b9c2d8d4e7f10b9a3f1b9c28d4e7f10b9a3f1b9c2d0e4f1a3b9c2d0e4": 1778229440794
   },
-  "publicUsers": {
-    "276423795877871616": 1778233042986
+  "usersPublic": {
+    "8c2d0e4f1a3b9c2d8d4e7f10b9a3f1b9c28d4e7f10b9a3f1b9c2d0e4f1a3b9c2": 1778233042986
   }
 }
 ```
 
 | Field | Description |
 |---|---|
-| `delay` | Anonymous cooldown duration in ms (`0` = disabled) |
-| `publicDelay` | Public cooldown duration in ms (`0` = disabled) |
-| `users` | Map `userId → last-anon-post-timestamp` |
-| `publicUsers` | Map `userId → last-public-post-timestamp` |
+| `delayMs` | Anonymous cooldown duration in ms (`0` = disabled) |
+| `delayPublicMs` | Public cooldown duration in ms (`0` = disabled) |
+| `users` | Map `HMAC(VOTE_SECRET, "u:" + userId) → last-anon-post-timestamp` |
+| `usersPublic` | Map `HMAC(VOTE_SECRET, "u:" + userId) → last-public-post-timestamp` |
+
+The bot recomputes the tag on every operation (`getRemainingCooldown(userId)`,
+`setLastConfession(userId)`, etc.) — `userId` is provided by Discord on every
+interaction, never stored at rest.
 
 ## `consents.json`
 
